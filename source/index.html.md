@@ -18,11 +18,55 @@ search: true
 
 # Introduction
 
-Welcome to the Orbita API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+# Orbita
+This repository will be used to contain everything that needs to be shared between all the services/repositories, in particular
 
-We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
+* This repository's wiki will hold the documentation about: API, domain concepts, shared data, etc...
+* Setup process and project automation scripts
+* Integration and smoke tests
 
-This example API documentation page was created with [Slate](https://github.com/tripit/slate). Feel free to edit it and use it as a base for your own API's documentation.
+This projects is based on microservices and exchange [domain events](DomainEvents) on a [event bus](EventBus).
+
+The actual services are:
+
+* OAuth service - The repository is [here](https://git.coders51.com/coders51/orbita-oauth/tree/master). It's **_write a little description here_**.
+* Networking service - The repository is [here](https://git.coders51.com/coders51/orbita-networking/tree/master). This service maps the relationships between users and other entities. It responds to events like `"FriendshipRequested"` and similar events that may involve creating of, updating of and querying by relationships. In the case of a `"FriendshipRequested"` event, a `FriendRequest` between two users is saved in its data store. Later on, this `friend_request` may be accepted when this service receives `"FriendshipAccepted"` event that involves the same two users. By default, this runs in `localhost:4001` in development.
+* Notification service - The repository is [here](https://git.coders51.com/coders51/orbita-notification/tree/master). It's **_write a little description here_**.
+
+## Summary
+- [General Architecture Details](General-Architecture-Details)
+- [HTTP API Documentation](http-api)
+- [Authentication and Authorization](Authentication-and-Authorization)
+- [Orbita Components API](Orbita-Components-API)
+- [Authentication JWT Format & Authentication API](jwt)
+- [Domain Events](Domain-Events)
+- [How To Run Local](how-to-run-local)
+- [Seed Users](seed-users)
+- [How to create new application](how-to-create-new-application)
+- [Orbita Credentials](orbita-credentials)
+- [How to store user data in Orbita Bucket service](how-to-make-requests-to-oauth-for-storing-user-data-in-bucket)
+
+## Deployment and Server Configuration
+- [How to Setup A New Orbita Instance](how-to-setup-orbita-instance)
+- [Staging Environment And Deploy](Staging-Environment-And-Deploy)
+- [Provisioning Vagrant](provisioning-vagrant)
+- [Provisioning Staging Server](provisioning-staging)
+- [How to Deploy Services](how-to-deploy-services)
+
+
+# Dev Machine Setup
+
+1. Install Ansible and Vagrant
+2. Go this repo's root directory
+3. `ansible-galaxy install -r requirements.yml` try `sudo` if the command file with permission error.
+4. `vagrant up` - This will take a long time as it will provision your vagrant machine with all the dependencies of Orbita's services.
+5. `vagrant ssh` - Logs into your Orbita dev machine
+6. Run `./setup.sh` to initialize all the repositories (`orbita-networking`, `orbita-notifications`, and so on)
+7. `foreman start` - Start all services
+
+* Note that all the Orbita repositories must exist in your computer. They need to be located in the same directory as this Orbita repo.
+* Make sure that the forwarded ports found in the Vagrantfile are open in your host computer. `vagrant up` will fail if those ports aren't available.
+* If you want to start services separately, refer to the Vagrantfile to see how to start them.
 
 # Authentication
 
