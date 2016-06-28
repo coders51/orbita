@@ -121,11 +121,69 @@
       <div class="content">
         <h1 id="introduction">Introduction</h1>
 
-<p>Welcome to the Orbita API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.</p>
+<h1 id="orbita">Orbita</h1>
 
-<p>We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.</p>
+<p>This repository will be used to contain everything that needs to be shared between all the services/repositories, in particular</p>
 
-<p>This example API documentation page was created with <a href="https://github.com/tripit/slate">Slate</a>. Feel free to edit it and use it as a base for your own API&rsquo;s documentation.</p>
+<ul>
+<li>This repository&rsquo;s wiki will hold the documentation about: API, domain concepts, shared data, etc&hellip;</li>
+<li>Setup process and project automation scripts</li>
+<li>Integration and smoke tests</li>
+</ul>
+
+<p>This projects is based on microservices and exchange <a href="DomainEvents">domain events</a> on a <a href="EventBus">event bus</a>.</p>
+
+<p>The actual services are:</p>
+
+<ul>
+<li>OAuth service - The repository is <a href="https://git.coders51.com/coders51/orbita-oauth/tree/master">here</a>. It&rsquo;s <strong><em>write a little description here</em></strong>.</li>
+<li>Networking service - The repository is <a href="https://git.coders51.com/coders51/orbita-networking/tree/master">here</a>. This service maps the relationships between users and other entities. It responds to events like <code class="prettyprint">&quot;FriendshipRequested&quot;</code> and similar events that may involve creating of, updating of and querying by relationships. In the case of a <code class="prettyprint">&quot;FriendshipRequested&quot;</code> event, a <code class="prettyprint">FriendRequest</code> between two users is saved in its data store. Later on, this <code class="prettyprint">friend_request</code> may be accepted when this service receives <code class="prettyprint">&quot;FriendshipAccepted&quot;</code> event that involves the same two users. By default, this runs in <code class="prettyprint">localhost:4001</code> in development.</li>
+<li>Notification service - The repository is <a href="https://git.coders51.com/coders51/orbita-notification/tree/master">here</a>. It&rsquo;s <strong><em>write a little description here</em></strong>.</li>
+</ul>
+
+<h2 id="summary">Summary</h2>
+
+<ul>
+<li><a href="General-Architecture-Details">General Architecture Details</a></li>
+<li><a href="http-api">HTTP API Documentation</a></li>
+<li><a href="Authentication-and-Authorization">Authentication and Authorization</a></li>
+<li><a href="Orbita-Components-API">Orbita Components API</a></li>
+<li><a href="jwt">Authentication JWT Format &amp; Authentication API</a></li>
+<li><a href="Domain-Events">Domain Events</a></li>
+<li><a href="how-to-run-local">How To Run Local</a></li>
+<li><a href="seed-users">Seed Users</a></li>
+<li><a href="how-to-create-new-application">How to create new application</a></li>
+<li><a href="orbita-credentials">Orbita Credentials</a></li>
+<li><a href="how-to-make-requests-to-oauth-for-storing-user-data-in-bucket">How to store user data in Orbita Bucket service</a></li>
+</ul>
+
+<h2 id="deployment-and-server-configuration">Deployment and Server Configuration</h2>
+
+<ul>
+<li><a href="how-to-setup-orbita-instance">How to Setup A New Orbita Instance</a></li>
+<li><a href="Staging-Environment-And-Deploy">Staging Environment And Deploy</a></li>
+<li><a href="provisioning-vagrant">Provisioning Vagrant</a></li>
+<li><a href="provisioning-staging">Provisioning Staging Server</a></li>
+<li><a href="how-to-deploy-services">How to Deploy Services</a></li>
+</ul>
+
+<h1 id="dev-machine-setup">Dev Machine Setup</h1>
+
+<ol>
+<li>Install Ansible and Vagrant</li>
+<li>Go this repo&rsquo;s root directory</li>
+<li><code class="prettyprint">ansible-galaxy install -r requirements.yml</code> try <code class="prettyprint">sudo</code> if the command file with permission error.</li>
+<li><code class="prettyprint">vagrant up</code> - This will take a long time as it will provision your vagrant machine with all the dependencies of Orbita&rsquo;s services.</li>
+<li><code class="prettyprint">vagrant ssh</code> - Logs into your Orbita dev machine</li>
+<li>Run <code class="prettyprint">./setup.sh</code> to initialize all the repositories (<code class="prettyprint">orbita-networking</code>, <code class="prettyprint">orbita-notifications</code>, and so on)</li>
+<li><code class="prettyprint">foreman start</code> - Start all services</li>
+</ol>
+
+<ul>
+<li>Note that all the Orbita repositories must exist in your computer. They need to be located in the same directory as this Orbita repo.</li>
+<li>Make sure that the forwarded ports found in the Vagrantfile are open in your host computer. <code class="prettyprint">vagrant up</code> will fail if those ports aren&rsquo;t available.</li>
+<li>If you want to start services separately, refer to the Vagrantfile to see how to start them.</li>
+</ul>
 
 <h1 id="authentication">Authentication</h1>
 
