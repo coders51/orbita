@@ -144,28 +144,838 @@
 <h2 id="summary">Summary</h2>
 
 <ul>
-<li><a href="General-Architecture-Details">General Architecture Details</a></li>
-<li><a href="http-api">HTTP API Documentation</a></li>
-<li><a href="Authentication-and-Authorization">Authentication and Authorization</a></li>
-<li><a href="Orbita-Components-API">Orbita Components API</a></li>
-<li><a href="jwt">Authentication JWT Format &amp; Authentication API</a></li>
-<li><a href="Domain-Events">Domain Events</a></li>
-<li><a href="how-to-run-local">How To Run Local</a></li>
-<li><a href="seed-users">Seed Users</a></li>
-<li><a href="how-to-create-new-application">How to create new application</a></li>
-<li><a href="orbita-credentials">Orbita Credentials</a></li>
-<li><a href="how-to-make-requests-to-oauth-for-storing-user-data-in-bucket">How to store user data in Orbita Bucket service</a></li>
+<li><a href="/#general-architecture-details">General Architecture Details</a></li>
+<li><a href="/#http-api-documentation">HTTP API Documentation</a></li>
+<li><a href="/#authentication-and-authorization">Authentication and Authorization</a></li>
+<li><a href="/#orbita-components-api">Orbita Components API</a></li>
+<li><a href="/#jwt">Authentication JWT Format &amp; Authentication API</a></li>
+<li><a href="/#domain-events">Domain Events</a></li>
+<li><a href="/#how-to-run-local">How To Run Local</a></li>
+<li><a href="/#how-to-create-new-application">How to create new application</a></li>
+<li><a href="/#how-to-make-requests-to-oauth-for-storing-user-data-in-bucket">How to store user data in Orbita Bucket service</a></li>
 </ul>
 
 <h2 id="deployment-and-server-configuration">Deployment and Server Configuration</h2>
 
 <ul>
-<li><a href="how-to-setup-orbita-instance">How to Setup A New Orbita Instance</a></li>
-<li><a href="Staging-Environment-And-Deploy">Staging Environment And Deploy</a></li>
-<li><a href="provisioning-vagrant">Provisioning Vagrant</a></li>
-<li><a href="provisioning-staging">Provisioning Staging Server</a></li>
-<li><a href="how-to-deploy-services">How to Deploy Services</a></li>
+<li><a href="/#how-to-setup-orbita-instance">How to Setup A New Orbita Instance</a></li>
+<li><a href="/#staging-environment-and-deploy">Staging Environment And Deploy</a></li>
+<li><a href="/#provisioning-vagrant">Provisioning Vagrant</a></li>
+<li><a href="/#provisioning-staging">Provisioning Staging Server</a></li>
+<li><a href="/#how-to-deploy-services">How to Deploy Services</a></li>
 </ul>
+
+<h1 id="general-architecture-details">General Architecture Details</h1>
+
+<p>Some info about our architecture:</p>
+
+<ul>
+<li>http://www.martinfowler.com/eaaDev/EventCollaboration.html</li>
+<li>http://www.martinfowler.com/eaaDev/DomainEvent.html</li>
+<li>http://www.martinfowler.com/eaaDev/EventSourcing.html</li>
+</ul>
+
+<h1 id="http-api-documentation">HTTP API Documentation</h1>
+
+<p>The documentation is written in markdown following the <a href="https://github.com/apiaryio/api-blueprint">API Blueprint Specification</a></p>
+
+<h2 id="available-documentation">Available Documentation</h2>
+
+<ul>
+<li><a href="#orbita-notifications-http-api">orbita-notifications</a></li>
+<li><a href="#orbita-networking-http-api">orbita-networking</a></li>
+</ul>
+
+<h2 id="how-to-generate-html">How to generate HTML</h2>
+
+<p>Using <a href="https://github.com/danielgtaylor/aglio">aglio</a> an HTML file can be generate starting from a Blueprint file</p>
+<pre class="highlight shell"><code><span class="gp">&gt; </span>To install, use this code:
+
+<span class="gp">$ </span>npm -g install aglio
+</code></pre>
+<pre class="highlight shell"><code><span class="gp">&gt; </span>HTML Generation
+
+<span class="gp">$ </span>aglio -i http-api-mta-notifications.md -o http-api-mta-notifications.html
+</code></pre>
+
+<h1 id="orbita-authentication-amp-authorization">Orbita Authentication &amp; Authorization</h1>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>All services share a secret key</p>
+
+<h2 id="scenario-1-authentication-authorization-between-services">Scenario 1 - Authentication/Authorization between services</h2>
+
+<ol>
+<li><p>Service <strong>A</strong> calls Service <strong>B</strong> (example: <code class="prettyprint">http://foo.orbita.com/api/v1/users</code>)</p></li>
+<li><p>Service <strong>A</strong> takes Service <strong>B</strong> URL (<code class="prettyprint">http://foo.orbita.com/api/v1/users</code>) and encrypt it with SHA-256 using the shared key, encode it in base64 and put the resulting token in an header (example: <code class="prettyprint">Authorization: X-C51 xxxxxxxxxxxx</code>).</p></li>
+<li><p>Service <strong>B</strong> receives the call, checks if the header is present and do the same process of point 2. Than Service <strong>B</strong> checks if both token are equal and only in this case it responds with the requested resource.</p></li>
+</ol>
+
+<p>If you want to try it in your shell, given <code class="prettyprint">$URL</code> as the URL of the resource that needs authentication and given <code class="prettyprint">$SECRET</code> the shared key:
+<code class="prettyprint">
+$ curl -vvv $URL -H &#39;Accept: application/json&#39; -H &quot;Authorization: X-C51 `echo -n $URL | openssl dgst -sha256 -hex -hmac $SECRET | cut -d &#39; &#39; -f 2`&quot;
+</code></p>
+
+<h2 id="scenario-2-authentication-authorization-between-apps-and-services">Scenario 2 - Authentication/Authorization between apps and services</h2>
+
+<p><strong>Login Process</strong></p>
+
+<ol>
+<li>Application <strong>A</strong> calls <strong>orbita-oauth</strong> requesting a standard <em>OAuth 2.0</em> login process.</li>
+<li><p><strong>orbita-oauth</strong> responds back with a <strong>access token</strong> (in jwt format) containing this data:</p>
+<pre class="highlight json"><code><span class="w">      </span><span class="p">{</span><span class="w">
+        </span><span class="err">user:</span><span class="w"> </span><span class="err">{</span><span class="w">
+          </span><span class="err">id:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx',</span><span class="w">
+          </span><span class="err">email:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx',</span><span class="w">
+          </span><span class="err">expiration_date:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx',</span><span class="w">
+          </span><span class="err">date:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx'</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="err">}</span><span class="w">
+</span></code></pre>
+
+<p>and a <strong>refresh_token</strong>.</p></li>
+<li><p>If Application <strong>A</strong> is an internal Orbita app it creates a cookie to share both tokens with <strong>orbita-components</strong>.</p></li>
+<li><p>If Application <strong>A</strong> find that a cookie is already present it simply calls <strong>orbita-oauth</strong> to verify if the token is still valid. If the token is not valid Application <strong>A</strong> uses the <code class="prettyprint">refresh_token</code> to request to <strong>orbita-oauth</strong> another valid token.</p></li>
+</ol>
+
+<p><strong>Resource Request Process</strong></p>
+
+<ol>
+<li>Application <strong>A</strong> calls Service <strong>B</strong> (example: <code class="prettyprint">http://foo.orbita.com/api/v1/users</code>) and include the jwt token in the header <code class="prettyprint">Authorization: Bearer xxxxxxxxxxxxxx</code></li>
+<li>Service <strong>B</strong> calls <strong>orbita-oauth</strong> and check if the token is valid. If it&rsquo;s valid it responds with the requested resource</li>
+</ol>
+
+<h2 id="general-considerations">General Considerations</h2>
+
+<p>In general keep in mind that:</p>
+
+<ul>
+<li>services should be able to ask each other almost every kind of information (example: complete orbita users list)</li>
+<li>apps should be able to ask to services <strong>only informations about the logged user</strong> (example: his own friends list, his own notifications, etc)</li>
+</ul>
+
+<h1 id="orbita-components-api">Orbita Components API</h1>
+
+<h3 id="setup">Setup</h3>
+
+<ol>
+<li>Add to your html file next scripts:
+
+<ul>
+<li><code class="prettyprint">&lt;script src=&quot;&lt;%= Rails.application.secrets.cdn_url %&gt;/orbita_components.js&quot;&gt;&lt;/script&gt;</code></li>
+<li><code class="prettyprint">&lt;script src=&quot;https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.en&quot;&gt;&lt;/script&gt;</code></li>
+<li><code class="prettyprint">&lt;script src=&quot;https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.it&quot;&gt;&lt;/script&gt;</code></li>
+</ul></li>
+<li>Add styles:
+
+<ul>
+<li><code class="prettyprint">&lt;link href=&quot;&lt;%= Rails.application.secrets.cdn_url %&gt;/orbita_components.css&quot; rel=&quot;stylesheet&quot;&gt;</code></li>
+</ul></li>
+</ol>
+
+<h3 id="api">API</h3>
+
+<ul>
+<li><code class="prettyprint">orbitaComponents.init</code> renders components with params.</li>
+<li><code class="prettyprint">orbitaComponents.showFlashMessage</code> shows a flash message with the following params.
+
+<ul>
+<li><code class="prettyprint">text</code>: the text of the messagge</li>
+<li><code class="prettyprint">cssClass</code>: the css class applied to the message (<code class="prettyprint">info</code>, <code class="prettyprint">warning</code>, <code class="prettyprint">danger</code>)</li>
+<li><code class="prettyprint">duration</code>: the flash message display time in ms.</li>
+</ul></li>
+</ul>
+
+<p>example: <code class="prettyprint">orbitaComponents.showFlashMessage(&#39;lorem ipsum&#39;, &#39;info&#39;, 2500)</code></p>
+
+<h3 id="example">Example:</h3>
+<pre class="highlight plaintext"><code>&lt;div id="orbita_toolbar_wrapper"&gt;
+&lt;/div&gt;
+
+&lt;div id="orbita_body"&gt;
+&lt;/div&gt;
+
+&lt;div id="orbita_footer"&gt;
+&lt;/div&gt;
+orbitaComponents.init({
+  toolbar: {
+    wrapperId: 'orbita_toolbar_wrapper', links: [
+      {
+        url: 'https://foo.com',
+        it: 'Foo IT',
+        en: 'Foo EN'
+      },{
+        url: 'http://boo.com',
+        it: 'Boo IT',
+        en: 'Boo EN'
+      }],
+      logoImage: "&lt;%=asset_url('white_logo.png') %&gt;",
+      logoWidth: "165px",
+      logoHeight: "36px"
+  },
+  footer: {wrapperId: 'orbita_footer'}
+});
+</code></pre>
+
+<h3 id="different-links-in-toolbar-you-can-provide-function-for-customize-links">Different links in toolbar - you can provide function for customize links:</h3>
+<pre class="highlight plaintext"><code>orbitaComponents.init({
+  toolbar: {
+    wrapperId: 'orbita_toolbar_wrapper', links: [
+      {
+        url: 'https://foo.com',
+        it: 'Foo IT',
+        en: 'Foo EN'
+      },{
+        url: 'http://boo.com',
+        it: 'Boo IT',
+        en: 'Boo EN'
+      }, {
+        url: '/settings',
+        it: 'Settings',
+        en: 'Settings',
+        authorization: function(currentUser){ return currentUser }  
+      }],
+      logoImage: "&lt;%=asset_url('white_logo.png') %&gt;",
+      logoWidth: "165px",
+      logoHeight: "36px"
+  }
+});
+</code></pre>
+
+<h3 id="example-with-friend-button">Example with Friend Button</h3>
+<pre class="highlight plaintext"><code> &lt;div&gt;
+   &lt;p&gt;Alex Err with id 2&lt;/p&gt;
+   &lt;div id="button_connect"&gt;&lt;/div&gt;
+ &lt;/div&gt;
+ &lt;script type="text/javascript" charset="utf-8"&gt;
+   orbitaComponents.renderFriendshipButton({wrapperId: 'button_connect', userId: 2});
+&lt;/script&gt;
+</code></pre>
+
+<h3 id="adding-custom-links-to-user-menu-in-the-toolbar">Adding custom links to user menu in the toolbar</h3>
+<pre class="highlight plaintext"><code>orbitaComponents.init({
+  toolbar: {
+    userMenu: {
+      links: [
+        {
+          url: 'http://www.facebook.com',
+          it: 'Faccebooke',
+          en: 'Facebook'
+        }
+      ]
+    }
+  }
+})
+</code></pre>
+
+<ul>
+<li>The above example adds a link under the user menu.</li>
+</ul>
+
+<h1 id="verify-jwt-token">Verify JWT Token</h1>
+
+<ul>
+<li>URL: <code class="prettyprint">http://OAUTH-DOMAIN/api/v1/jwt/verify</code></li>
+<li>Type: <code class="prettyprint">GET</code></li>
+<li>Format: <code class="prettyprint">json</code></li>
+<li>PARAMS:
+
+<ul>
+<li><code class="prettyprint">jwt_token</code>(string)</li>
+</ul></li>
+<li>Return json:
+
+<ul>
+<li><code class="prettyprint">id</code>(uuid) - user id</li>
+<li><code class="prettyprint">email</code>(string) - user email</li>
+<li><code class="prettyprint">first_name</code>(string) - user first name</li>
+<li><code class="prettyprint">last_name</code>(string) - user last name</li>
+</ul></li>
+<li>Statuses:
+
+<ul>
+<li><code class="prettyprint">401</code> - if token invalid</li>
+<li><code class="prettyprint">200</code> - if token valid</li>
+</ul></li>
+</ul>
+
+<h2 id="metadata">Metadata</h2>
+
+<p>Every domain event will have the same metadata
+* <code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event
+* <code class="prettyprint">type</code> (<code class="prettyprint">string</code>): the type of the event
+* <code class="prettyprint">source</code> (<code class="prettyprint">string</code>): the name of the service that emitted the event
+* <code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted
+* <code class="prettyprint">correlation_id</code> (<code class="prettyprint">string</code>): an id that can be used to create relationship between events (ex. If I group friendship events using the <code class="prettyprint">correlation_id</code> I will expect to see groups of events like [<code class="prettyprint">FriendshipRequested</code>, <code class="prettyprint">FriendshipAccepted</code>] or [<code class="prettyprint">FriendshipRequested</code>, <code class="prettyprint">FriendshipRefused</code>])
+* <code class="prettyprint">payload</code> (<code class="prettyprint">object</code>): event specific data</p>
+
+<h2 id="domain-events">Domain Events</h2>
+
+<h3 id="friendshiprequested">FriendshipRequested</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-networking</code></p>
+
+<p>Emitted from the orbita-networking service when a user requests friendship from another user
+* <code class="prettyprint">from</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the user that requested the friendship
+* <code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user</p>
+
+<p>Example:
+<code class="prettyprint">json
+{
+  &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
+  &quot;type&quot;: &quot;FriendshipRequested&quot;,
+  &quot;source&quot;: &quot;networking&quot;,
+  &quot;emitted_at&quot;: &quot;2015-09-17T13:55:02.930Z&quot;,
+  &quot;correlation_id&quot;: &quot;80F2564A-0B14-4731-BF6A-B7D3CAA61E48&quot;,
+  &quot;payload&quot;: {
+    &quot;from&quot;: &quot;C3B499C8-7F7F-45D0-82D7-75BFFF7417FD&quot;,
+    &quot;to&quot;: &quot;5B5A541F-2E16-4DAA-9AA5-710EDF09E6E4&quot;
+  }
+}
+</code></p>
+
+<h3 id="friendshipaccepted">FriendshipAccepted</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-networking</code></p>
+
+<p>Emitted from the orbita-networking service when a friendship request has been accepted by a user.
+* <code class="prettyprint">from</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the user that requested the friendship
+* <code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user
+* <code class="prettyprint">request_id</code> : the id of the friend request</p>
+
+<h3 id="friendshiprefused">FriendshipRefused</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-networking</code></p>
+
+<p>Emitted from the orbita-networking service when a friendship request has been refused by a user.
+* <code class="prettyprint">from</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the user that requested the friendship
+* <code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user
+* <code class="prettyprint">request_id</code> : the id of the friend request</p>
+
+<h3 id="usercreated">UserCreated</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
+
+<ul>
+<li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
+<li><code class="prettyprint">type</code> (<code class="prettyprint">string</code>): the type of the event</li>
+<li><code class="prettyprint">source</code> (<code class="prettyprint">string</code>): the name of the service that emitted the event</li>
+<li><code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted</li>
+<li><code class="prettyprint">payload</code> -&gt; user private profile fields</li>
+</ul>
+
+<p>Example:
+&ldquo;`json</p>
+
+<p>{
+  &quot;id&rdquo;: &ldquo;95494570-BA22-488E-AF9A-E272589ACEA2&rdquo;,
+  &ldquo;type&rdquo;: &ldquo;UserCreated&rdquo;,
+  &ldquo;source&rdquo;: &ldquo;orbita-oauth&rdquo;,
+  &ldquo;emitted_at&rdquo;: &ldquo;2015-09-17T13:55:02.930Z&rdquo;,
+  &ldquo;payload&rdquo;: {
+    user: {
+      id: 1,
+      email: &lsquo;example@mail.com&rsquo;,
+      first_name: &#39;first&rsquo;,
+      last_name: &#39;last&rsquo;
+    }
+  }
+}
+&ldquo;`</p>
+
+<h3 id="userupdated">UserUpdated</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
+
+<ul>
+<li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
+<li><code class="prettyprint">type</code> (<code class="prettyprint">string</code>): the type of the event</li>
+<li><code class="prettyprint">source</code> (<code class="prettyprint">string</code>): the name of the service that emitted the event</li>
+<li><code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted</li>
+<li><code class="prettyprint">payload</code> -&gt; user private profile fields</li>
+</ul>
+
+<p>Example:
+&rdquo;`json</p>
+
+<p>{
+  &ldquo;id&rdquo;: &ldquo;95494570-BA22-488E-AF9A-E272589ACEA2&rdquo;,
+  &ldquo;type&rdquo;: &ldquo;UserUpdated&rdquo;,
+  &ldquo;source&rdquo;: &ldquo;orbita-oauth&rdquo;,
+  &ldquo;emitted_at&rdquo;: &ldquo;2015-09-17T13:55:02.930Z&rdquo;,
+  &ldquo;payload&rdquo;: {
+    user: {
+      id: 1,
+      email: &#39;example@mail.com&rsquo;,
+      first_name: &#39;first&rsquo;,
+      last_name: &#39;last&rsquo;
+    }
+  }
+}
+&ldquo;`</p>
+
+<h3 id="user-language-changed">User language changed</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
+
+<ul>
+<li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
+<li><code class="prettyprint">type</code> (<code class="prettyprint">string</code>): the type of the event</li>
+<li><code class="prettyprint">source</code> (<code class="prettyprint">string</code>): the name of the service that emitted the event</li>
+<li><code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted</li>
+<li><code class="prettyprint">payload</code> -&gt; <code class="prettyprint">{from: &#39;en&#39;, to: &#39;it&#39;, user_id: 1}</code></li>
+</ul>
+
+<p>Example:
+&rdquo;`json</p>
+
+<p>{
+  &ldquo;id&rdquo;: &ldquo;95494570-BA22-488E-AF9A-E272589ACEA2&rdquo;,
+  &ldquo;type&rdquo;: &ldquo;UserLanguageChanged&rdquo;,
+  &ldquo;source&rdquo;: &ldquo;orbita-oauth&rdquo;,
+  &ldquo;emitted_at&rdquo;: &ldquo;2015-09-17T13:55:02.930Z&rdquo;,
+  &ldquo;payload&rdquo;: {
+    &ldquo;user_id&rdquo;: 1,
+    &ldquo;from&rdquo;: &ldquo;en&rdquo;,
+    &ldquo;to&rdquo;: &ldquo;it&rdquo;
+  }
+}
+&ldquo;`</p>
+
+<h3 id="userdeleted">UserDeleted</h3>
+
+<p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
+
+<ul>
+<li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
+<li><code class="prettyprint">type</code> (<code class="prettyprint">string</code>): the type of the event</li>
+<li><code class="prettyprint">source</code> (<code class="prettyprint">string</code>): the name of the service that emitted the event</li>
+<li><code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted</li>
+<li><code class="prettyprint">payload</code> -&gt; <code class="prettyprint">{user_id: 1}</code></li>
+</ul>
+
+<p>Example:
+<code class="prettyprint">json
+{
+  &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
+  &quot;type&quot;: &quot;UserDeleted&quot;,
+  &quot;source&quot;: &quot;orbita-oauth&quot;,
+  &quot;emitted_at&quot;: &quot;2015-09-17T13:55:02.930Z&quot;,
+  &quot;payload&quot;: {
+    &quot;user_id&quot;: 1,
+  }
+}
+</code></p>
+
+<h3 id="userlogout">UserLogout</h3>
+
+<ul>
+<li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
+<li><code class="prettyprint">type</code> (<code class="prettyprint">string</code>): the type of the event</li>
+<li><code class="prettyprint">source</code> (<code class="prettyprint">string</code>): the name of the service that emitted the event</li>
+<li><code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted</li>
+<li><code class="prettyprint">payload</code> -&gt; <code class="prettyprint">{user_id: 1}</code></li>
+</ul>
+
+<p>Example:
+<code class="prettyprint">json
+{
+  &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
+  &quot;type&quot;: &quot;UserDeleted&quot;,
+  &quot;source&quot;: &quot;orbita-oauth&quot;,
+  &quot;emitted_at&quot;: &quot;2015-09-17T13:55:02.930Z&quot;,
+  &quot;payload&quot;: {
+    &quot;user_id&quot;: 1,
+  }
+}
+</code></p>
+
+<h3 id="artworkshared">ArtworkShared</h3>
+
+<p>Emitted on channel <code class="prettyprint">inventory</code></p>
+
+<ul>
+<li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
+<li><code class="prettyprint">type</code> (<code class="prettyprint">string</code>): <code class="prettyprint">ArtworkShared</code></li>
+<li><code class="prettyprint">source</code> (<code class="prettyprint">string</code>): <code class="prettyprint">inventory</code></li>
+<li><code class="prettyprint">emitted_at</code> (<code class="prettyprint">datetime</code>): the time at which the event is emitted</li>
+<li><code class="prettyprint">correlation_id</code> (<code class="prettyprint">UUID</code>): an id that can be used to correlate events. This is responsibility of the emitting service</li>
+<li><code class="prettyprint">payload</code>:
+
+<ul>
+<li><code class="prettyprint">artwork_id</code> (<code class="prettyprint">UUID</code>): the artwork identifier to be used to eventually retrieve informations about the artworks</li>
+<li><code class="prettyprint">artwork_title</code> (<code class="prettyprint">string</code>): the artwork&rsquo;s title</li>
+<li><code class="prettyprint">artwork_author</code> (<code class="prettyprint">string</code>): the artwork&rsquo;s author</li>
+<li><code class="prettyprint">from</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the user that shared the artwork</li>
+<li><code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user</li>
+</ul></li>
+</ul>
+
+<p>Example:
+<code class="prettyprint">json
+{
+  &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
+  &quot;type&quot;: &quot;ArtworkShared&quot;,
+  &quot;source&quot;: &quot;inventory&quot;,
+  &quot;emitted_at&quot;: &quot;2015-09-17T13:55:02.930Z&quot;,
+  &quot;payload&quot;: {
+    &quot;artwork_id&quot;: &quot;49b530f6-35c6-4d26-af22-fd67f594bd98&quot;,
+    &quot;artwork_title&quot;: &quot;Mona Lisa&quot;,
+    &quot;artwork_author&quot;: &quot;Leonardo da Vinci&quot;,
+    &quot;from&quot;: &quot;C3B499C8-7F7F-45D0-82D7-75BFFF7417FD&quot;,
+    &quot;to&quot;: &quot;5B5A541F-2E16-4DAA-9AA5-710EDF09E6E4&quot;
+  }
+}
+</code></p>
+
+<ol>
+<li>Oauth service must be run on <code class="prettyprint">5100</code></li>
+<li>JWT-Test app must be run on <code class="prettyprint">3000</code></li>
+<li>Network app must be run on <code class="prettyprint">4001</code></li>
+<li>Components must be run (webpack) on <code class="prettyprint">8080</code></li>
+</ol>
+
+<h2 id="mta-oauth-create-apps">Mta-Oauth create apps</h2>
+
+<ul>
+<li><code class="prettyprint">rake db:seed</code></li>
+<li>Open localhost:5100, login with user: <code class="prettyprint">enricocarlesso@gmail.com</code> and password <code class="prettyprint">password</code></li>
+<li>Go to admin section, and create first application, add callback urls. (mark <code class="prettyprint">trusted</code> as true)
+Example:</li>
+</ul>
+<pre class="highlight json"><code><span class="w">  </span><span class="err">Redirect</span><span class="w"> </span><span class="err">uri:</span><span class="w"> </span><span class="s2">"http://portal.mytemplart-staging.com/users/auth/oauth51/callback"</span><span class="err">,</span><span class="w">
+  </span><span class="err">Uid:</span><span class="w"> </span><span class="s2">"dc58bccd82602fa1c86bdff342e3c627d44dd642dabf2e9b645ea0e501291d14"</span><span class="err">,</span><span class="w">
+  </span><span class="err">Secret:</span><span class="w"> </span><span class="s2">"a19c7a77185df47182dbe241a9e02614465da2dfe8f06d7fe888645465312001"</span><span class="w">
+</span></code></pre>
+
+<p>Then go to your application (jwt_test, developers) and add this secret and id to secret.yml</p>
+
+<h1 id="how-to-create-new-application-and-use-all-orbita-services">How to create new application and use all orbita services</h1>
+
+<h3 id="create-new-rails-app">Create new rails app</h3>
+
+<ul>
+<li><code class="prettyprint">rails new orbita_example &amp;&amp; cd orbita_example</code></li>
+<li><p>add to Gemfile auth gems:</p>
+
+<ul>
+<li><code class="prettyprint">gem &#39;omniauth-oauth51&#39;, git: &#39;https://github.com/coders51/omniauth-oauth51.git&#39;</code></li>
+<li><code class="prettyprint">gem &#39;oauth51-client&#39;, git: &#39;https://github.com/coders51/oauth51-client.git&#39;</code></li>
+</ul></li>
+<li><p><code class="prettyprint">bundle install</code></p></li>
+<li><p>Create oauth application in oauth app.</p>
+
+<ul>
+<li>Login  into <code class="prettyprint">connect.mytemplart-staging.com as admin</code> and go to <code class="prettyprint">Dashboard</code></li>
+<li>Navigate to <code class="prettyprint">Application</code> and click <code class="prettyprint">Add new</code></li>
+<li>Fill into: name <code class="prettyprint">application name</code>, Redirect uri <code class="prettyprint">http://my-site.mytemplart.com/users/auth/oauth51/callback</code>, Trusted <code class="prettyprint">true</code></li>
+<li>Click <code class="prettyprint">Save</code> button</li>
+</ul></li>
+<li><p>Go to your application and open <code class="prettyprint">config/secrets.yml</code> (also put to <code class="prettyprint">.gitignore</code> this file)</p>
+
+<ul>
+<li>Add your application secret code and uid to this file, example:</li>
+<li> <code class="prettyprint">ruby
+oauth:
+client_id: 0e08f9a0d80790d1d945fabfb4a80987fb17a5ac0a423448f8dc318e141f0d0e
+client_secret: 657a4c196c50ec957804c87d3915ad5b1f0504def89682b5d50131f4e72df766
+app_url: http://localhost:5100
+</code></li>
+</ul></li>
+</ul>
+
+<h3 id="login-section">Login section</h3>
+
+<p>For login, you can use oauth provider, and implement it in your application. Let&rsquo;s do it:
+ * Add to <code class="prettyprint">devise.rb</code>:</p>
+<pre class="highlight plaintext"><code>config.omniauth :oauth51, Rails.application.secrets.oauth['client_id'],   Rails.application.secrets.oauth['client_secret'], scope: 'public accounts points', client_options: {site: Rails.application.secrets.oauth['app_url']}
+
+</code></pre>
+
+<ul>
+<li>Create <code class="prettyprint">omniauth_callbacks_controller.rb</code> in <code class="prettyprint">app/controllers</code> folder:</li>
+</ul>
+<pre class="highlight plaintext"><code>  class OmniauthCallbacksController &lt; Devise::OmniauthCallbacksController
+
+    COOKIES_KEY = :_jwt_token
+    COOKIES_REFRESH_KEY = :_refresh_token
+
+    def oauth51
+      o51_authentication_token = request.env["omniauth.auth"].credentials.token
+      o51_refresh_token = request.env["omniauth.auth"].credentials.refresh_token
+
+      ### We need set token to cookies, then all apps can use it for login user.
+      set_auth_cookies(o51_authentication_token, o51_refresh_token)
+      client = Oauth51Client::Client.new(o51_authentication_token, Rails.application.secrets.oauth['app_url'])
+      client.me # returns info about user
+      User.create_from_o51(client.me)
+    end
+
+    private
+
+    def set_auth_cookies(jwt_token, refresh_token)
+      cookies[COOKIES_KEY] = {
+        value: jwt_token,
+        expires: 7.days.from_now,
+        domain: :all
+      }
+      cookies[COOKIES_REFRESH_KEY] = {
+        value: refresh_token,
+        expires: 7.days.from_now,
+        domain: :all
+      }
+    end
+  end
+</code></pre>
+
+<ul>
+<li>Login user if cookie present (include this concern where you want check and login user by cookies)</li>
+</ul>
+<pre class="highlight ruby"><code>  <span class="k">module</span> <span class="nn">JwtLogin</span>
+    <span class="kp">extend</span> <span class="no">ActiveSupport</span><span class="o">::</span><span class="no">Concern</span>
+
+  <span class="no">COOKIES_KEY</span> <span class="o">=</span> <span class="ss">:_jwt_token</span>
+  <span class="no">COOKIES_REFRESH_KEY</span> <span class="o">=</span> <span class="ss">:_refresh_token</span>
+
+  <span class="k">def</span> <span class="nf">login_with_jwt</span><span class="p">(</span><span class="n">tries</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">delete_cookies</span> <span class="k">if</span> <span class="n">tries</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="n">jwt_token</span> <span class="o">=</span> <span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_KEY</span><span class="p">]</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="no">Rails</span><span class="p">.</span><span class="nf">application</span><span class="p">.</span><span class="nf">secrets</span><span class="p">.</span><span class="nf">oauth</span><span class="p">[</span><span class="s1">'app_url'</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"/api/v1/users/me"</span>
+    <span class="k">begin</span>
+      <span class="n">user_info</span> <span class="o">=</span> <span class="no">RestClient</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="p">{</span><span class="s1">'Authorization'</span> <span class="o">=&gt;</span> <span class="s2">"Bearer </span><span class="si">#{</span><span class="n">jwt_token</span><span class="si">}</span><span class="s2">"</span><span class="p">})</span>
+    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+      <span class="k">if</span> <span class="n">e</span><span class="p">.</span><span class="nf">to_s</span><span class="p">.</span><span class="nf">match</span><span class="p">(</span><span class="sr">/401/</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">unless</span> <span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_REFRESH_KEY</span><span class="p">]</span>
+        <span class="n">refresh_token</span><span class="p">(</span><span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_REFRESH_KEY</span><span class="p">])</span>
+        <span class="n">login_with_jwt</span><span class="p">(</span><span class="n">tries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+      <span class="k">end</span>
+      <span class="k">return</span> <span class="kp">nil</span>
+    <span class="k">end</span>
+    <span class="no">User</span><span class="p">.</span><span class="nf">create_from_jwt_token</span><span class="p">(</span><span class="no">JSON</span><span class="p">.</span><span class="nf">parse</span><span class="p">(</span><span class="n">user_info</span><span class="p">))</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">refresh_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="ss">grant_type: </span><span class="s2">"refresh_token"</span><span class="p">,</span>
+      <span class="ss">client_id: </span><span class="no">Rails</span><span class="p">.</span><span class="nf">application</span><span class="p">.</span><span class="nf">secrets</span><span class="p">.</span><span class="nf">oauth</span><span class="p">[</span><span class="s2">"client_id"</span><span class="p">],</span>
+      <span class="ss">client_secret: </span><span class="no">Rails</span><span class="p">.</span><span class="nf">application</span><span class="p">.</span><span class="nf">secrets</span><span class="p">.</span><span class="nf">oauth</span><span class="p">[</span><span class="s2">"client_secret"</span><span class="p">],</span>
+      <span class="ss">refresh_token: </span><span class="n">token</span>
+    <span class="p">}</span>
+    <span class="k">begin</span>
+      <span class="n">token_data</span> <span class="o">=</span> <span class="no">RestClient</span><span class="p">.</span><span class="nf">post</span><span class="p">(</span><span class="no">Rails</span><span class="p">.</span><span class="nf">application</span><span class="p">.</span><span class="nf">secrets</span><span class="p">.</span><span class="nf">oauth</span><span class="p">[</span><span class="s2">"app_url"</span><span class="p">]</span> <span class="o">+</span> <span class="s1">'/oauth/token'</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+      <span class="k">return</span> <span class="kp">nil</span>
+    <span class="k">end</span>
+    <span class="n">update_tokens</span><span class="p">(</span><span class="no">JSON</span><span class="p">.</span><span class="nf">parse</span><span class="p">(</span><span class="n">token_data</span><span class="p">))</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">update_tokens</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+    <span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="ss">value: </span><span class="n">tokens</span><span class="p">[</span><span class="s2">"access_token"</span><span class="p">],</span>
+      <span class="ss">expires: </span><span class="mi">7</span><span class="p">.</span><span class="nf">days</span><span class="p">.</span><span class="nf">from_now</span><span class="p">,</span>
+      <span class="ss">domain: :all</span>
+    <span class="p">}</span>
+    <span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_REFRESH_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="ss">value: </span><span class="n">tokens</span><span class="p">[</span><span class="s2">"refresh_token"</span><span class="p">],</span>
+      <span class="ss">expires: </span><span class="mi">7</span><span class="p">.</span><span class="nf">days</span><span class="p">.</span><span class="nf">from_now</span><span class="p">,</span>
+      <span class="ss">domain: :all</span>
+    <span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">delete_cookies</span>
+    <span class="n">cookies</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="no">COOKIES_KEY</span><span class="p">,</span> <span class="ss">domain: :all</span><span class="p">)</span>
+    <span class="n">cookies</span><span class="p">.</span><span class="nf">delete</span><span class="p">(</span><span class="no">COOKIES_REFRESH_KEY</span><span class="p">,</span> <span class="ss">domain: :all</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+
+<ul>
+<li>Check if user token valid: Make request to oauth app <code class="prettyprint">/api/v1/users/me</code> with HEADERS: <code class="prettyprint">Authorization: &quot;Bearer #{token}&quot;</code></li>
+</ul>
+
+<h2 id="now-our-application-can-login-by-token-and-go-to-all-applications-as-logined-user">Now Our application can login by token, and go to all applications as logined user.</h2>
+
+<p>Next step - add some components to our application. Lets add <code class="prettyprint">toolbar</code> with notifications:
+ * Add to config/secrets.yml cdn url: <code class="prettyprint">cdn_url: http://cdn.mytemplart-staging.com</code>
+ * Add to your layout next code:</p>
+<pre class="highlight html"><code><span class="nt">&lt;head&gt;</span>  
+  <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"&lt;%= Rails.application.secrets.cdn_url %&gt;/orbita_components.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+  <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.en"</span><span class="nt">&gt;&lt;/script&gt;</span>
+  <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.it"</span><span class="nt">&gt;&lt;/script&gt;</span>
+  <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"&lt;%= Rails.application.secrets.cdn_url %&gt;/orbita_components.css"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/header&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">"orbita_toolbar_wrapper"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">"orbita_body"</span><span class="nt">&gt;</span>
+  Here you can add your code..........
+<span class="nt">&lt;/div&gt;</span>
+
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">"orbita_footer"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+  <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">"text/javascript"</span> <span class="na">charset=</span><span class="s">"utf-8"</span><span class="nt">&gt;</span>
+    <span class="kd">var</span> <span class="nx">store</span> <span class="o">=</span> <span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">configureStoreFunction</span><span class="p">(</span><span class="nb">window</span><span class="p">.</span><span class="nx">Reducers</span><span class="p">);</span>
+    <span class="c1">//You can use store in your own redux application if you use react, or ignore it.</span>
+    <span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">renderToolbar</span><span class="p">({</span><span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'orbita_toolbar_wrapper'</span><span class="p">,</span> <span class="na">store</span><span class="p">:</span> <span class="nx">store</span><span class="p">,</span> <span class="na">links</span><span class="p">:</span> <span class="p">[{</span>
+      <span class="na">url</span><span class="p">:</span> <span class="s1">'https://www.mytemplart.com/inventory/users/sign_in'</span><span class="p">,</span>
+      <span class="na">it</span><span class="p">:</span> <span class="s1">'Inventario'</span><span class="p">,</span>
+      <span class="na">en</span><span class="p">:</span> <span class="s1">'Inventory'</span>
+    <span class="p">},{</span>
+      <span class="na">url</span><span class="p">:</span> <span class="s1">'http://www.mytemplart.com'</span><span class="p">,</span>
+      <span class="na">it</span><span class="p">:</span> <span class="s1">'Magazine'</span><span class="p">,</span>
+      <span class="na">en</span><span class="p">:</span> <span class="s1">'Magazine'</span>
+    <span class="p">}]});</span>
+    <span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">renderFooter</span><span class="p">({</span><span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'orbita_footer'</span><span class="p">,</span> <span class="na">store</span><span class="p">:</span> <span class="nx">store</span><span class="p">});</span>
+  <span class="nt">&lt;/script&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+</code></pre>
+
+<p><strong>It&rsquo;s all, enjoy!</strong></p>
+
+<h1 id="how-to-store-user-data-in-orbita-bucket-service">How to Store User Data in Orbita Bucket Service</h1>
+
+<p>We can store additional Orbita-specific user data in the Orbita Bucket service. To do this, we will need to send a request to Orbita Oauth which exposes the <code class="prettyprint">http://connect.getorbita.io/api/v1/users/1/bucket</code> endpoint. It works for the following methods:</p>
+
+<ol>
+<li><p>POST - replaces the user data stored in the bucket with the data passed along with the request. It expects a JSON-format body with a <code class="prettyprint">data</code> property like <code class="prettyprint">{&quot;data&quot;: {&quot;foo&quot;: &quot;bar&quot;}}</code>. Making a POST request to <code class="prettyprint">http://connect.getorbita.io/api/v1/users/1/bucket</code> with the above payload, will create a record with the following details <code class="prettyprint">{user_id: 1, data: {foo: &quot;bar&quot;}}</code>.</p></li>
+<li><p>PUT - merges the <code class="prettyprint">data</code> payload with the data already stored for a specific user. If no previous user data exists, a new record will be created for that user. It expects a JSON-format body with a <code class="prettyprint">data</code> property like <code class="prettyprint">{&quot;data&quot;: {&quot;foo&quot;: &quot;bar&quot;}}</code>. If a user <code class="prettyprint">{user_id: 1, {foo: &quot;bar&quot;}}</code> exists, and we do a PUT request to <code class="prettyprint">http://connect.getorbita.io/api/v1/users/1/bucket</code> with payload of <code class="prettyprint">{&quot;data&quot;: {&quot;bar&quot;: &quot;baz&quot;}</code>, the updated record will be <code class="prettyprint">{user_id: 1, {foo: &quot;bar&quot;, bar: &quot;baz&quot;}}</code> where <code class="prettyprint">data</code> property is merged with the <code class="prettyprint">data</code> property of the payload.</p></li>
+<li><p>GET - this gets a user record given a user <code class="prettyprint">id</code>. Just send a GET request to <code class="prettyprint">http://connect.getorbita.io/api/v1/users/1/bucket</code>.</p></li>
+<li><p>DELETE - deletes a user record given a user <code class="prettyprint">id</code>. Just send a DELETE request to <code class="prettyprint">http://connect.getorbita.io/api/v1/users/1/bucket</code></p></li>
+</ol>
+
+<p>When making the requests, keep in mind that an access token is required. You will need to get an access token from oauth or oauth-staging. Below are some sample access tokens I use for testing that have expiration times set in the far future.</p>
+
+<ul>
+<li><code class="prettyprint">http://connect.getorbita.io/api/v1/users/1/bucket?access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjp7ImlkIjoyLCJlbWFpbCI6ImdqYWxkb244NUBnbWFpbC5jb20iLCJmaXJzdF9uYW1lIjoiIiwiZGF0ZSI6IjIwMTYtMDMtMjJUMDY6NTk6NTYuODA1KzAxOjAwIn19.9dgb2dvq4Qmya13PANLHLxWRMAnXF2ihNcrUThpOCqE</code></li>
+<li><code class="prettyprint">http://connect-staging.getorbita.io/api/v1/users/1/bucket?access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjp7ImlkIjoyLCJlbWFpbCI6ImdqYWxkb244NUBnbWFpbC5jb20iLCJmaXJzdF9uYW1lIjpudWxsLCJkYXRlIjoiMjAxNi0wMy0yMVQxMTo0OToxOC44NzcrMDE6MDAifX0.OdBAm883FqlHyBOob9t4TEk2bDLgNhJVIm6zDE5oxxs</code></li>
+</ul>
+
+<h1 id="how-to-setup-a-new-orbita-instance">How to Setup a New Orbita Instance</h1>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>We will need to edit the <a href="https://git.coders51.com/coders51/orbita/blob/master/config.exs">config.exs</a> file found in the root directory of the <code class="prettyprint">orbita</code> repo. A <code class="prettyprint">get_configs/1</code> function is expected for the instance you want to setup. The <code class="prettyprint">get_configs/1</code> function should return a keyword list with certain options. If you want to generate configs for a <code class="prettyprint">&quot;foo&quot;</code> instance, we define the following <code class="prettyprint">get_configs/1</code> function:</p>
+<pre class="highlight plaintext"><code>  def get_configs("foo") do
+    [apps: @apps, # a list of apps you want to generate configs for. refer to @apps to see all available options
+     ports: %{
+       "networking" =&gt; "4030",
+       "notifications" =&gt; "4130",
+       "cookietrack" =&gt; "9040"}, # a mapping of ports for certain apps
+     domain: "foo.com", # the parent domain for the services
+     namespace: "foo", # the namespace we use to refer to this instance. typically the same as the argument expected by  the function
+     server: "deploy@orbita.lan.coders51.com", # the server we will deploy to
+     env: "production"] # either "staging" or "production" environment
+  end
+</code></pre>
+
+<h2 id="generation-of-configurations">Generation of Configurations</h2>
+
+<p>From the command line, go to the root of the <code class="prettyprint">orbita</code> directory. From there, we run the following:</p>
+<pre class="highlight plaintext"><code>$ ./gen_configs -n foo
+</code></pre>
+
+<p>The above command generates capistrano, nginx, supervisor, unicorn, thin, secrets.yml and vm.args configs for each of the apps depending on the templates that exist for them. You can check the templates available for each app under <code class="prettyprint">./templates</code> directory in the orbita repo.</p>
+
+<h2 id="first-deployment-of-each-service-app">First Deployment of Each Service/App</h2>
+
+<p>Before deploying, go to the repo of either Networking, Notifications or Oauth and then run the ff:
+<code class="prettyprint">
+$ bundle exec cap foo_production setup:amqp
+</code></p>
+
+<p>The above command creates the rabbitmq vhost for the instance and a corresponding user with admin-like privileges. This is an important step so that the services can actually communicate with each other and is required so that you can deploy multiple orbita instances on one server.</p>
+
+<h3 id="all-services-except-dashboard-and-components-cdn-are-deployed-this-way">All services except Dashboard and Components/CDN are deployed this way:</h3>
+
+<p>Make sure you are in the root directory of the service we want to deploy.
+<code class="prettyprint">
+$ git commit -am &quot;foo_production deploy configs&quot;
+$ bundle exec cap foo_production deploy:initial # if env is &quot;staging&quot; then it should be foo_staging
+</code></p>
+
+<p>Note that we <code class="prettyprint">deploy:initial</code>. This is different from the capistrano <code class="prettyprint">deploy</code> task we will use in succeeding deploys since it includes some setup tasks such as uploading of nginx and supervisor configs.</p>
+
+<h3 id="for-dashboard-we-do-the-ff">For Dashboard, we do the ff:</h3>
+
+<p>Before deploying, you will need to add the necessary configs for your deployment to <code class="prettyprint">config/environment.js</code>. Commit and push that to the remote host before running the below commands.</p>
+<pre class="highlight plaintext"><code>$ ./setup_deploy foo_dashboard_production deploy@server.com  # the first arg is the name of the dashboard app which is the namespace + dashboard + env
+$ ember deploy foo_dashboard_production
+</code></pre>
+
+<h3 id="for-components-cdn-we-do">For Components/CDN, we do:</h3>
+<pre class="highlight plaintext"><code>$ git commit -am "foo_production deploy configs"
+$ bundle exec cap foo_production copy:initial
+</code></pre>
+
+<h3 id="important-notes">Important Notes</h3>
+
+<ul>
+<li>You can check the services that are running in the server with <code class="prettyprint">sudo supervisorctl status</code>. Watch out for services that keep on restarting. You will need to look into the logs for those services to find out why they stop.</li>
+<li>When building releases for the elixir apps(this happens every time you deploy), you may encounter errors that have to do with <code class="prettyprint">:idna</code> or some other dependencies failing to compile. Some other Elixir libraries require more memory to compile and will fail in compiling in the server. If building the release locally works fine with the same configs, then you likely need to increase the memory for your server.</li>
+<li>Some apps such as Demo and Dashboard, require oauth configuration. This means you will need to add the Application to the Connect service. Once added there and set to <code class="prettyprint">trusted</code>, copy their <code class="prettyprint">client_secret</code> and <code class="prettyprint">client_id</code> to your instance&rsquo;s Demo secrets.yml file which would be <code class="prettyprint">foo_demo_production.secrets.yml</code>. For Dashboard, you just need the <code class="prettyprint">client_id</code> copied to <code class="prettyprint">config/environment.js</code>under <code class="prettyprint">Env.torii.providers.oauth51.apiKey</code>.</li>
+</ul>
+
+<h2 id="staging-deploy">Staging Deploy</h2>
+
+<p>For every application just run <code class="prettyprint">cap staging deploy</code></p>
+
+<h2 id="staging-remote-urls">Staging Remote URLs</h2>
+
+<ul>
+<li>http://connect.mytemplart-staging.com -&gt; It&rsquo;s the ouath server -&gt; mta-oauth</li>
+<li>http://portal.mytemplart-staging.com -&gt; It&rsquo;s the portal -&gt; mta-test-jwt</li>
+<li>http://developers.mytemplart-staging.com -&gt; It&rsquo;s the site for the developers -&gt; mta-developers</li>
+<li>http://networking.mytemplart-staging.com -&gt; It&rsquo;s the networking service -&gt; mta-networking</li>
+<li>http://notification.mytemplart-staging.com -&gt; It&rsquo;s the notification server -&gt; mta-notification</li>
+<li>http://cdn.mytemplart-staging.com -&gt; We use for distribute the js compoments file -&gt; mta-components</li>
+</ul>
+
+<h1 id="vagrant-provisioning">Vagrant Provisioning</h1>
+
+<ol>
+<li>Install Ansible and Vagrant</li>
+<li>Clone this repository and go to its root directory</li>
+<li><code class="prettyprint">ansible-galaxy install -r requirements.yml</code> try <code class="prettyprint">sudo</code> if the command fails with permission error.</li>
+<li><code class="prettyprint">vagrant up</code> - This will take a long time as it will provision your vagrant machine with all the dependencies of Orbita&rsquo;s services.</li>
+<li><code class="prettyprint">vagrant ssh</code> - Logs into your Orbita dev machine</li>
+<li><code class="prettyprint">orbita-components</code> folder is shared between the local machine and the vagrant vm with rsync. The folder is synced <strong>only</strong> when vagrant vm is initialized. If you want a live rsync (necessary if you develop orbita-components) you need to execute also <code class="prettyprint">vagrant rsync-auto</code></li>
+<li>Run <code class="prettyprint">./setup.sh</code> to initialize all the repositories (<code class="prettyprint">orbita-networking</code>, <code class="prettyprint">orbita-notifications</code>, and so on)</li>
+<li><code class="prettyprint">foreman start</code> - Start all services</li>
+</ol>
+
+<ul>
+<li>Note that all the Orbita repositories must exist in your computer. They need to be located in the same directory as this Orbita repo.</li>
+<li>Make sure that the forwarded ports found in the Vagrantfile are open in your host computer. <code class="prettyprint">vagrant up</code> will fail if those ports aren&rsquo;t available.</li>
+<li>If you want to start services separately, refer to the Procfile to see how to start them.</li>
+<li>If <code class="prettyprint">vagrant up</code> fails, you can run provisioning again by running <code class="prettyprint">vagrant provision</code>.</li>
+</ul>
+
+<h1 id="provisioning-staging-server">Provisioning Staging Server</h1>
+
+<ol>
+<li>Install Ansible in your dev machine</li>
+<li>Set staging host in <code class="prettyprint">/etc/ansible/hosts</code> by adding the following to that file:
+<code class="prettyprint">
+[staging]
+deploy@orbita.lan.coders51.com
+</code></li>
+<li>Git clone the https://git.coders51.com/coders51/orbita repository</li>
+<li>From the root of that repository, run <code class="prettyprint">ansible-playbook provision/staging.yml</code></li>
+<li>If you encounter any bugs, report them by creating an issue at https://git.coders51.com/coders51/orbita/issues</li>
+</ol>
+
+<h1 id="deploying-orbita-services">Deploying Orbita Services</h1>
+
+<h2 id="deploying-services-except-dashboard">Deploying Services Except Dashboard</h2>
+<pre class="highlight plaintext"><code>$ bundle exec cap foo_production deploy
+</code></pre>
+
+<h2 id="deploying-dashboard">Deploying Dashboard</h2>
+<pre class="highlight plaintext"><code>$ ember deploy foo_dashboard_production
+</code></pre>
 
 <h1 id="dev-machine-setup">Dev Machine Setup</h1>
 
@@ -184,170 +994,6 @@
 <li>Make sure that the forwarded ports found in the Vagrantfile are open in your host computer. <code class="prettyprint">vagrant up</code> will fail if those ports aren&rsquo;t available.</li>
 <li>If you want to start services separately, refer to the Vagrantfile to see how to start them.</li>
 </ul>
-
-<h1 id="authentication">Authentication</h1>
-
-<blockquote>
-<p>To authorize, use this code:</p>
-</blockquote>
-<pre class="highlight ruby"><code><span class="nb">require</span> <span class="s1">'kittn'</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
-</code></pre>
-<pre class="highlight python"><code><span class="kn">import</span> <span class="nn">kittn</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
-</code></pre>
-<pre class="highlight shell"><code><span class="c"># With shell, you can just pass the correct header with each request</span>
-curl <span class="s2">"api_endpoint_here"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
-</code></pre>
-<pre class="highlight javascript"><code><span class="kr">const</span> <span class="nx">kittn</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'kittn'</span><span class="p">);</span>
-
-<span class="kd">let</span> <span class="nx">api</span> <span class="o">=</span> <span class="nx">kittn</span><span class="p">.</span><span class="nx">authorize</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">);</span>
-</code></pre>
-
-<blockquote>
-<p>Make sure to replace <code class="prettyprint">meowmeowmeow</code> with your API key.</p>
-</blockquote>
-
-<p>Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our <a href="http://example.com/developers">developer portal</a>.</p>
-
-<p>Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:</p>
-
-<p><code class="prettyprint">Authorization: meowmeowmeow</code></p>
-
-<aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
-</aside>
-
-<h1 id="kittens">Kittens</h1>
-
-<h2 id="get-all-kittens">Get All Kittens</h2>
-<pre class="highlight ruby"><code><span class="nb">require</span> <span class="s1">'kittn'</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="p">.</span><span class="nf">kittens</span><span class="p">.</span><span class="nf">get</span>
-</code></pre>
-<pre class="highlight python"><code><span class="kn">import</span> <span class="nn">kittn</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="o">.</span><span class="n">kittens</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-</code></pre>
-<pre class="highlight shell"><code>curl <span class="s2">"http://example.com/api/kittens"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
-</code></pre>
-<pre class="highlight javascript"><code><span class="kr">const</span> <span class="nx">kittn</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'kittn'</span><span class="p">);</span>
-
-<span class="kd">let</span> <span class="nx">api</span> <span class="o">=</span> <span class="nx">kittn</span><span class="p">.</span><span class="nx">authorize</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">);</span>
-<span class="kd">let</span> <span class="nx">kittens</span> <span class="o">=</span> <span class="nx">api</span><span class="p">.</span><span class="nx">kittens</span><span class="p">.</span><span class="nx">get</span><span class="p">();</span>
-</code></pre>
-
-<blockquote>
-<p>The above command returns JSON structured like this:</p>
-</blockquote>
-<pre class="highlight json"><code><span class="p">[</span><span class="w">
-  </span><span class="p">{</span><span class="w">
-    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Fluffums"</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calico"</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="p">{</span><span class="w">
-    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Max"</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unknown"</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
-  </span><span class="p">}</span><span class="w">
-</span><span class="p">]</span><span class="w">
-</span></code></pre>
-
-<p>This endpoint retrieves all kittens.</p>
-
-<h3 id="http-request">HTTP Request</h3>
-
-<p><code class="prettyprint">GET http://example.com/api/kittens</code></p>
-
-<h3 id="query-parameters">Query Parameters</h3>
-
-<table><thead>
-<tr>
-<th>Parameter</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead><tbody>
-<tr>
-<td>include_cats</td>
-<td>false</td>
-<td>If set to true, the result will also include cats.</td>
-</tr>
-<tr>
-<td>available</td>
-<td>true</td>
-<td>If set to false, the result will include kittens that have already been adopted.</td>
-</tr>
-</tbody></table>
-
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
-</aside>
-
-<h2 id="get-a-specific-kitten">Get a Specific Kitten</h2>
-<pre class="highlight ruby"><code><span class="nb">require</span> <span class="s1">'kittn'</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="p">.</span><span class="nf">kittens</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</code></pre>
-<pre class="highlight python"><code><span class="kn">import</span> <span class="nn">kittn</span>
-
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
-<span class="n">api</span><span class="o">.</span><span class="n">kittens</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</code></pre>
-<pre class="highlight shell"><code>curl <span class="s2">"http://example.com/api/kittens/2"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
-</code></pre>
-<pre class="highlight javascript"><code><span class="kr">const</span> <span class="nx">kittn</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'kittn'</span><span class="p">);</span>
-
-<span class="kd">let</span> <span class="nx">api</span> <span class="o">=</span> <span class="nx">kittn</span><span class="p">.</span><span class="nx">authorize</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">);</span>
-<span class="kd">let</span> <span class="nx">max</span> <span class="o">=</span> <span class="nx">api</span><span class="p">.</span><span class="nx">kittens</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
-</code></pre>
-
-<blockquote>
-<p>The above command returns JSON structured like this:</p>
-</blockquote>
-<pre class="highlight json"><code><span class="p">{</span><span class="w">
-  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Max"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"breed"</span><span class="p">:</span><span class="w"> </span><span class="s2">"unknown"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"fluffiness"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"cuteness"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w">
-</span><span class="p">}</span><span class="w">
-</span></code></pre>
-
-<p>This endpoint retrieves a specific kitten.</p>
-
-<aside class="warning">Inside HTML code blocks like this one, you can&rsquo;t use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
-
-<h3 id="http-request">HTTP Request</h3>
-
-<p><code class="prettyprint">GET http://example.com/kittens/&lt;ID&gt;</code></p>
-
-<h3 id="url-parameters">URL Parameters</h3>
-
-<table><thead>
-<tr>
-<th>Parameter</th>
-<th>Description</th>
-</tr>
-</thead><tbody>
-<tr>
-<td>ID</td>
-<td>The ID of the kitten to retrieve</td>
-</tr>
-</tbody></table>
 
           <h1 id="errors">Errors</h1>
 
