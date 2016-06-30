@@ -127,6 +127,8 @@
 <ul>
 <li><a href="/#introduction">Introduction</a></li>
 <li><a href="/#general-architecture-details">General Architecture Details</a></li>
+<li><a href="/#quick-reference-for-setup-of-a-production-server">Quick reference for a setup of a production server</a></li>
+<li><a href="/#where-are-the-log">Where are the log</a></li>
 <li><a href="/#http-api-documentation">HTTP API Documentation</a></li>
 <li><a href="/#authentication-amp-authorization">Authentication and Authorization</a></li>
 <li><a href="/#orbita-components-api">Orbita Components API</a></li>
@@ -188,23 +190,316 @@
 
 <h1 id="general-architecture-details">General Architecture Details</h1>
 
-<p>Some info about our architecture:</p>
+<p>orbita is a microservice collaboration platform.</p>
+
+<p><img alt="Image of Yaktocat" src="images/orbitaarch.png" /></p>
+
+<p>Some info about this kind of architecture:</p>
 
 <ul>
-<li>http://www.martinfowler.com/eaaDev/EventCollaboration.html</li>
-<li>http://www.martinfowler.com/eaaDev/DomainEvent.html</li>
-<li>http://www.martinfowler.com/eaaDev/EventSourcing.html</li>
+<li><a href="http://www.martinfowler.com/eaaDev/EventCollaboration.html">Event Collaboration</a></li>
+<li><a href="http://www.martinfowler.com/eaaDev/DomainEvent.html">Domain Event</a></li>
+<li><a href="http://www.martinfowler.com/eaaDev/EventSourcing.html">Event Sourcing</a></li>
 </ul>
+
+<h1 id="quick-reference-for-setup-of-a-production-server">Quick reference for setup of a production server</h1>
+
+<p>To install orbita on an existing server you need the following environment on your production server:</p>
+
+<ul>
+<li>RabbitMQ v 3.6 (we suggest 3.6.2)</li>
+<li>PostgreSQL v 9.4&gt;, if you&rsquo;re in an Amazon server we suggest PostgresSQL RDS with multi-zone deploy and backup of a week.</li>
+<li>nginx v 1.9.3&gt;</li>
+<li>nodejs v LTS 4.4.4</li>
+<li>package manager ruby RVM</li>
+<li>passenger for integration between ruby ed nginx</li>
+<li>supervisor to manage runtime process</li>
+</ul>
+
+<p>Components are in ruby on rails and elixir, for some component we need:</p>
+
+<ul>
+<li>Erlang v 18.3, and Elixir 1.2X we suggest esl-erlang downloadable from this link <a href="https://www.erlang-solutions.com/resources/download.html">https://www.erlang-solutions.com/resources/download.html</a> and <a href="http://elixir-lang.org/install.html#unix-and-unix-like">http://elixir-lang.org/install.html#unix-and-unix-like</a></li>
+</ul>
+
+<h1 id="where-are-the-log">where are the log</h1>
+
+<p>BLA BLA GPAD</p>
 
 <h1 id="http-api-documentation">HTTP API Documentation</h1>
 
 <p>The documentation is written in markdown following the <a href="https://github.com/apiaryio/api-blueprint">API Blueprint Specification</a></p>
 
-<h2 id="available-documentation">Available Documentation</h2>
+<h2 id="notifications-api">Notifications API</h2>
+
+<p>Notification service</p>
+
+<h3 id="group-user-notifications">Group User Notifications</h3>
+
+<p>All these requests requires a JWT token to identify the user</p>
+
+<h2 id="unread-notifications-users-id-notifications-unread">Unread Notifications [/users/{ID}/notifications/unread]</h2>
+
+<p>All the unread notifications addressed to the identified user. The <code class="prettyprint">JWT_TOKEN</code> is given by the OAuth server and contains encrypted informations about the user.</p>
 
 <ul>
-<li><a href="#orbita-notifications-http-api">orbita-notifications</a></li>
-<li><a href="#orbita-networking-http-api">orbita-networking</a></li>
+<li>Parameters
+
+<ul>
+<li>ID: 42 (required, string) - OAuth user identifier</li>
+</ul></li>
+</ul>
+
+<h3 id="retrieve-unread-notifications-get">Retrieve Unread Notifications [GET]</h3>
+
+<p>Retrieve all the unread notifications of the user</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (application/json)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>[
+      {
+        &ldquo;id&rdquo;: 12,
+        &ldquo;message&rdquo;: &ldquo;Rick has accepted your friendship request&rdquo;,
+        &ldquo;from&rdquo;: &ldquo;7&rdquo;,
+        &ldquo;to&rdquo;: &ldquo;8&rdquo;,
+        &ldquo;require_input&rdquo;: false
+      }
+    ]</p></li>
+</ul></li>
+<li><p>Response 401</p></li>
+</ul>
+
+<h3 id="mark-notifications-as-read-delete">Mark Notifications As Read [DELETE]</h3>
+
+<p>Mark all the unread notifications of the user as read</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 202</p></li>
+<li><p>Response 401</p></li>
+</ul>
+
+<h2 id="unread-notification-notifications-unread-id">Unread Notification [/notifications/unread/{ID}]</h2>
+
+<p>Unread notification. The <code class="prettyprint">JWT_TOKEN</code> is given by the OAuth server and contains encrypted informations about the user.</p>
+
+<ul>
+<li>Parameters
+
+<ul>
+<li>ID: 77 (required, string) - Notification identifier</li>
+</ul></li>
+</ul>
+
+<h3 id="mark-notification-as-read-delete">Mark Notification As Read [DELETE]</h3>
+
+<p>Mark single notification as read. The authenticated user must be the sender or the receiver of the notification</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 202</p></li>
+<li><p>Response 401</p></li>
+<li><p>Response 404</p></li>
+</ul>
+
+<h2 id="notification-notifications-id">Notification [/notifications/{ID}]</h2>
+
+<p>Notification. The <code class="prettyprint">JWT_TOKEN</code> is given by the OAuth server and contains encrypted informations about the user.</p>
+
+<ul>
+<li>Parameters
+
+<ul>
+<li>ID: 77 (required, string) - Notification identifier</li>
+</ul></li>
+</ul>
+
+<h3 id="retrieve-notification-get">Retrieve Notification [GET]</h3>
+
+<p><strong>[NOT IMPLEMENTED YET]</strong> Retrieve single notification. The authenticated user must be the sender or the receiver of the notification</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (application/json)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>{
+      &ldquo;id&rdquo;: 12,
+      &ldquo;message&rdquo;: &ldquo;Rick has accepted your friendship request&rdquo;,
+      &ldquo;from&rdquo;: &ldquo;7&rdquo;,
+      &ldquo;to&rdquo;: &ldquo;8&rdquo;,
+      &ldquo;read&rdquo;: true
+    }</p></li>
+</ul></li>
+<li><p>Response 401</p></li>
+</ul>
+
+<h3 id="delete-notification-delete">Delete Notification [DELETE]</h3>
+
+<p><strong>[NOT IMPLEMENTED YET]</strong> Delete the single notification.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 202</p></li>
+<li><p>Response 401</p></li>
+</ul>
+
+<h3 id="enable-notifications-post-users-user-notifications-by-media-enabled">Enable notifications [POST /users/:user/notifications/by/:media/enabled]</h3>
+
+<p>Enables a given notification media (e.g., email or websockets) for a given user.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}
+    Accept: application/json</p></li>
+</ul></li>
+<li><p>Response: 200</p></li>
+</ul>
+
+<h3 id="disable-notifications-post-users-user-notifications-by-media-disabled">Disable notifications [POST /users/:user/notifications/by/:media/disabled]</h3>
+
+<p>Disables a given notification media (e.g., email or websockets) for a given user.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}
+    Accept: application/json</p></li>
+</ul></li>
+<li><p>Response: 200</p></li>
+</ul>
+
+<h3 id="read-notifications-settings-for-a-media-get-users-user-notifications-by-media">Read notifications settings for a media [GET /users/:user/notifications/by/:media]</h3>
+
+<p>Tells whether notifications on the given <code class="prettyprint">:media</code> are enabled for the given <code class="prettyprint">:user</code>.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}
+    Accept: application/json</p></li>
+</ul></li>
+<li><p>Response: 200</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>{&ldquo;enabled&rdquo;: true}</p></li>
+</ul></li>
+</ul>
+
+<h3 id="read-notifications-settings-for-all-media-get-users-user-notifications-by-media">Read notifications settings for all media [GET /users/:user/notifications/by/:media]</h3>
+
+<p>Tells whether notifications are enabled/disabled for each media for the given <code class="prettyprint">:user</code>.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {JWT_TOKEN}
+    Accept: application/json</p></li>
+</ul></li>
+<li><p>Response: 200</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>{
+      &ldquo;email&rdquo;: true,
+      &ldquo;ws&rdquo;: false,
+      &hellip;
+    }</p></li>
+</ul></li>
+</ul>
+
+<h3 id="group-websocket">Group WebSocket</h3>
+
+<h2 id="websocket-library-js-app-js">WebSocket Library [/js/app.js]</h2>
+
+<p>The library to use to establish the WebSocket connection. See <a href="http://www.phoenixframework.org/docs/channels">the official documentation</a> on how to use it client side.</p>
+
+<h3 id="retrieve-websocket-library-get">Retrieve WebSocket Library [GET]</h3>
+
+<ul>
+<li>Response 200</li>
+</ul>
+
+<h2 id="websocket-handshake-socket-websocket-jwt_token-jwt_token">WebSocket Handshake [/socket/websocket?jwt_token={JWT_TOKEN}]</h2>
+
+<p>To establish a WebSocket connection, the client sends a WebSocket handshake request, for which the server returns a WebSocket handshake response. The <code class="prettyprint">JWT_TOKEN</code> is given by the OAuth server and contains encrypted informations about the user.</p>
+
+<ul>
+<li>Parameters
+
+<ul>
+<li>JWT_TOKEN: &ldquo;eyJ0eXAiOiJKV&hellip;&rdquo; (required, string) - Authentication token</li>
+</ul></li>
+</ul>
+
+<h3 id="websocket-handshake-get">WebSocket Handshake [GET]</h3>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Upgrade: websocket
+    Connection: Upgrade
+    Cache-Control: no-cache</p></li>
+</ul></li>
+<li><p>Response 101</p></li>
 </ul>
 
 <h2 id="how-to-generate-html">How to generate HTML</h2>
@@ -218,6 +513,321 @@
 
 <span class="gp">$ </span>aglio -i http-api-mta-notifications.md -o http-api-mta-notifications.html
 </code></pre>
+
+<p>FORMAT: 1A</p>
+
+<h2 id="networking-api">Networking API</h2>
+
+<p>Networking service. The endpoints on this API expose resources that represent relationships across different users and things.</p>
+
+<h2 id="group-friend-requests">Group Friend Requests</h2>
+
+<p>The friend request resource represents a request to connect from one user to another. A friendship between users can only be created when a friendship request has been accepted. There are five(5) endpoints for this resource..</p>
+
+<h2 id="list-of-friend-requests-friend_requests">List of Friend Requests [/friend_requests]</h2>
+
+<p>A resource representing all of a user&rsquo;s friend requests.</p>
+
+<h3 id="fetch-all-friend-requests-get">Fetch all Friend Requests [GET]</h3>
+
+<p>Fetches all friend requests sent and received by a user. The user is identified through the <code class="prettyprint">Authorization</code> header provided.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (application/json)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>[
+      {
+        &ldquo;oauth_id&rdquo;: &ldquo;12&rdquo;,
+        &ldquo;received&rdquo;: true,
+        &ldquo;sent&rdquo;: true
+      }
+    ]</p></li>
+</ul></li>
+</ul>
+
+<h3 id="create-a-friend-request-post">Create a Friend Request [POST]</h3>
+
+<p>It expects a <code class="prettyprint">to</code> param which should be an oauth_id of a user to whom the request is sent to. An <code class="prettyprint">Authorization</code> header is required to identify the user who sent the request. You may only create one (1) friend request between two (2) users.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>to: &ldquo;77&rdquo; (required, string) - User ID of the user to whom the request is addressed to.</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (application/json)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>[
+      {
+        &ldquo;oauth_id&rdquo;: &ldquo;12&rdquo;,
+        &ldquo;sent&rdquo;: true
+      }
+    ]</p></li>
+</ul></li>
+</ul>
+
+<h2 id="list-of-friend-requests-friend_requests-id">List of Friend Requests [/friend_requests/{id}]</h2>
+
+<p>A resource representing all of a user&rsquo;s friend requests.</p>
+
+<h3 id="deletes-a-friend-request-delete">Deletes a Friend Request [DELETE]</h3>
+
+<p>An <code class="prettyprint">Authorization</code> header is required to identify the user who sent the request.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>id: &ldquo;77&rdquo; (required, string) - User ID of the user to whom the request is addressed to.</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>Ok</p></li>
+</ul></li>
+</ul>
+
+<h2 id="accept-friend-request-friend_requests-from-accept">Accept Friend Request [/friend_requests/{from}/accept]</h2>
+
+<p>For accepting a friend request.</p>
+
+<h3 id="accept-a-friend-request-put">Accept a Friend Request [PUT]</h3>
+
+<p>Deleting a friend request and creates a friend resource in its place. The user accepting the friend request is identified through the <code class="prettyprint">Authorization</code> header. You can only accept a friend request once.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>from: &ldquo;77&rdquo; (required, string) - User ID of the user who sent the request.</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>Ok</p></li>
+</ul></li>
+</ul>
+
+<h2 id="refuse-friend-request-friend_requests-from-refuse">Refuse Friend Request [/friend_requests/{from}/refuse]</h2>
+
+<p>For refusing a friend request.</p>
+
+<h3 id="refuse-a-friend-request-delete">Refuse a Friend Request [DELETE]</h3>
+
+<p>The user accepting the friend request is identified through the <code class="prettyprint">Authorization</code> header.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>from: &ldquo;77&rdquo; (required, string) - User ID of the user who sent the request.</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>Ok</p></li>
+</ul></li>
+</ul>
+
+<h2 id="all-friends-friends">All Friends [/friends]</h2>
+
+<p>The friend resource represents a friendship between two (2) users. A friendship is only created when a friend request has been accepted by a user.</p>
+
+<h3 id="fetch-all-friends-get">Fetch all Friends [GET]</h3>
+
+<p>Get all friends of a user. The user is identified through the Authorization header provided.</p>
+
+<ul>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>[
+      {
+        &ldquo;oauth_id&rdquo;: &ldquo;12&rdquo;
+      }
+    ]</p></li>
+</ul></li>
+</ul>
+
+<h2 id="a-friend-friends-id">A friend [/friends/{id}]</h2>
+
+<h3 id="delete-friendship-delete">Delete Friendship [DELETE]</h3>
+
+<p>An id param is expected which identifies the current user&rsquo;s friend. The current user is identified through the Authorization header provided.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>id: &ldquo;77&rdquo; (required, string) - User ID of the user who is a friend of current user.</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: Bearer {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>Ok</p></li>
+</ul></li>
+</ul>
+
+<h2 id="all-friends-for-services-private-friends">All Friends for Services [/private/friends]</h2>
+
+<p>Friends resource meant to be accessed by other MTA services.</p>
+
+<h3 id="fetch-all-friends-get">Fetch all Friends [GET]</h3>
+
+<p>Get all friends of a user. The user is identified through the <code class="prettyprint">id</code> query parameter.
+<code class="prettyprint">AUTH_CODE</code> is the Base64-encoded, sha256 hash of a secret key shared across services and the url of the endpoint.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>id: &ldquo;77&rdquo; (required, string) - User ID of the user who you want to fetch friends for.</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Accept: application/json
+    Authorization: X-C51 {JWT_TOKEN}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>true/false</p></li>
+</ul></li>
+</ul>
+
+<h2 id="friendship-check-for-users-friends-with-id">Friendship Check for Users [/friends-with/{id}]</h2>
+
+<h3 id="check-if-two-2-users-are-connected-get">Check if Two (2) Users are Connected [GET]</h3>
+
+<p>The current user is identified through the Authorization header provided.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>id: &ldquo;77&rdquo; (required, string) - User ID</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: Bearer {AUTH_CODE}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>true/false</p></li>
+</ul></li>
+</ul>
+
+<h2 id="friendship-check-for-services-private-friends-with">Friendship Check for Services [/private/friends-with]</h2>
+
+<h3 id="check-if-two-2-users-are-connected-get">Check if Two (2) Users are Connected [GET]</h3>
+
+<p><code class="prettyprint">AUTH_CODE</code> is the Base64-encoded, sha256 hash of a secret key shared across services and the url of the endpoint.</p>
+
+<ul>
+<li><p>Parameters</p>
+
+<ul>
+<li>id: &ldquo;77&rdquo; (required, string) - User ID</li>
+<li>friend_id: &ldquo;78&rdquo; (required, string) - User ID</li>
+</ul></li>
+<li><p>Request</p>
+
+<ul>
+<li><p>Headers</p>
+
+<p>Authorization: X-C51 {AUTH_CODE}</p></li>
+</ul></li>
+<li><p>Response 200 (text/plain)</p>
+
+<ul>
+<li><p>Body</p>
+
+<p>true/false</p></li>
+</ul></li>
+</ul>
 
 <h1 id="authentication-amp-authorization">Authentication &amp; Authorization</h1>
 
@@ -234,7 +844,7 @@
 </ol>
 
 <p>If you want to try it in your shell, given <code class="prettyprint">$URL</code> as the URL of the resource that needs authentication and given <code class="prettyprint">$SECRET</code> the shared key:
-<code class="prettyprint">
+<code class="prettyprint">shell
 $ curl -vvv $URL -H &#39;Accept: application/json&#39; -H &quot;Authorization: X-C51 `echo -n $URL | openssl dgst -sha256 -hex -hmac $SECRET | cut -d &#39; &#39; -f 2`&quot;
 </code></p>
 
@@ -244,20 +854,23 @@ $ curl -vvv $URL -H &#39;Accept: application/json&#39; -H &quot;Authorization: X
 
 <ol>
 <li>Application <strong>A</strong> calls <strong>orbita-oauth</strong> requesting a standard <em>OAuth 2.0</em> login process.</li>
-<li><p><strong>orbita-oauth</strong> responds back with a <strong>access token</strong> (in jwt format) containing this data:</p>
-<pre class="highlight json"><code><span class="w">      </span><span class="p">{</span><span class="w">
-        </span><span class="err">user:</span><span class="w"> </span><span class="err">{</span><span class="w">
-          </span><span class="err">id:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx',</span><span class="w">
-          </span><span class="err">email:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx',</span><span class="w">
-          </span><span class="err">expiration_date:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx',</span><span class="w">
-          </span><span class="err">date:</span><span class="w"> </span><span class="err">'xxxxxxxxxxx'</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-      </span><span class="err">}</span><span class="w">
-</span></code></pre>
+<li><strong>orbita-oauth</strong> responds back with a <strong>access token</strong> (in jwt format) containing this data:</li>
+</ol>
+<pre class="highlight javascript"><code>          <span class="p">{</span>
+            <span class="nl">user</span><span class="p">:</span> <span class="p">{</span>
+              <span class="nl">id</span><span class="p">:</span> <span class="s1">'xxxxxxxxxxx'</span><span class="p">,</span>
+              <span class="nx">email</span><span class="err">:</span> <span class="s1">'xxxxxxxxxxx'</span><span class="p">,</span>
+              <span class="nx">expiration_date</span><span class="err">:</span> <span class="s1">'xxxxxxxxxxx'</span><span class="p">,</span>
+              <span class="nx">date</span><span class="err">:</span> <span class="s1">'xxxxxxxxxxx'</span>
+            <span class="p">}</span>
+          <span class="p">}</span>
+</code></pre>
 
-<p>and a <strong>refresh_token</strong>.</p></li>
-<li><p>If Application <strong>A</strong> is an internal Orbita app it creates a cookie to share both tokens with <strong>orbita-components</strong>.</p></li>
-<li><p>If Application <strong>A</strong> find that a cookie is already present it simply calls <strong>orbita-oauth</strong> to verify if the token is still valid. If the token is not valid Application <strong>A</strong> uses the <code class="prettyprint">refresh_token</code> to request to <strong>orbita-oauth</strong> another valid token.</p></li>
+<p>and a <strong>refresh_token</strong>.</p>
+
+<ol>
+<li>If Application <strong>A</strong> is an internal Orbita app it creates a cookie to share both tokens with <strong>orbita-components</strong>.</li>
+<li>If Application <strong>A</strong> find that a cookie is already present it simply calls <strong>orbita-oauth</strong> to verify if the token is still valid. If the token is not valid Application <strong>A</strong> uses the <code class="prettyprint">refresh_token</code> to request to <strong>orbita-oauth</strong> another valid token.</li>
 </ol>
 
 <p><strong>Resource Request Process</strong></p>
@@ -311,83 +924,83 @@ $ curl -vvv $URL -H &#39;Accept: application/json&#39; -H &quot;Authorization: X
 <p>example: <code class="prettyprint">orbitaComponents.showFlashMessage(&#39;lorem ipsum&#39;, &#39;info&#39;, 2500)</code></p>
 
 <h3 id="example">Example:</h3>
-<pre class="highlight plaintext"><code>&lt;div id="orbita_toolbar_wrapper"&gt;
-&lt;/div&gt;
-
-&lt;div id="orbita_body"&gt;
-&lt;/div&gt;
-
-&lt;div id="orbita_footer"&gt;
-&lt;/div&gt;
-orbitaComponents.init({
-  toolbar: {
-    wrapperId: 'orbita_toolbar_wrapper', links: [
-      {
-        url: 'https://foo.com',
-        it: 'Foo IT',
-        en: 'Foo EN'
-      },{
-        url: 'http://boo.com',
-        it: 'Boo IT',
-        en: 'Boo EN'
-      }],
-      logoImage: "&lt;%=asset_url('white_logo.png') %&gt;",
-      logoWidth: "165px",
-      logoHeight: "36px"
-  },
-  footer: {wrapperId: 'orbita_footer'}
-});
+<pre class="highlight javascript"><code><span class="o">&lt;</span><span class="nx">div</span> <span class="nx">id</span><span class="o">=</span><span class="s2">"orbita_toolbar_wrapper"</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="sr">/div</span><span class="err">&gt;
+</span>
+<span class="o">&lt;</span><span class="nx">div</span> <span class="nx">id</span><span class="o">=</span><span class="s2">"orbita_body"</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="sr">/div</span><span class="err">&gt;
+</span>
+<span class="o">&lt;</span><span class="nx">div</span> <span class="nx">id</span><span class="o">=</span><span class="s2">"orbita_footer"</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="sr">/div</span><span class="err">&gt;
+</span><span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span>
+  <span class="na">toolbar</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'orbita_toolbar_wrapper'</span><span class="p">,</span> <span class="na">links</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="na">url</span><span class="p">:</span> <span class="s1">'https://foo.com'</span><span class="p">,</span>
+        <span class="na">it</span><span class="p">:</span> <span class="s1">'Foo IT'</span><span class="p">,</span>
+        <span class="na">en</span><span class="p">:</span> <span class="s1">'Foo EN'</span>
+      <span class="p">},{</span>
+        <span class="na">url</span><span class="p">:</span> <span class="s1">'http://boo.com'</span><span class="p">,</span>
+        <span class="na">it</span><span class="p">:</span> <span class="s1">'Boo IT'</span><span class="p">,</span>
+        <span class="na">en</span><span class="p">:</span> <span class="s1">'Boo EN'</span>
+      <span class="p">}],</span>
+      <span class="na">logoImage</span><span class="p">:</span> <span class="s2">"&lt;%=asset_url('white_logo.png') %&gt;"</span><span class="p">,</span>
+      <span class="na">logoWidth</span><span class="p">:</span> <span class="s2">"165px"</span><span class="p">,</span>
+      <span class="na">logoHeight</span><span class="p">:</span> <span class="s2">"36px"</span>
+  <span class="p">},</span>
+  <span class="na">footer</span><span class="p">:</span> <span class="p">{</span><span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'orbita_footer'</span><span class="p">}</span>
+<span class="p">});</span>
 </code></pre>
 
 <h3 id="different-links-in-toolbar-you-can-provide-function-for-customize-links">Different links in toolbar - you can provide function for customize links:</h3>
-<pre class="highlight plaintext"><code>orbitaComponents.init({
-  toolbar: {
-    wrapperId: 'orbita_toolbar_wrapper', links: [
-      {
-        url: 'https://foo.com',
-        it: 'Foo IT',
-        en: 'Foo EN'
-      },{
-        url: 'http://boo.com',
-        it: 'Boo IT',
-        en: 'Boo EN'
-      }, {
-        url: '/settings',
-        it: 'Settings',
-        en: 'Settings',
-        authorization: function(currentUser){ return currentUser }  
-      }],
-      logoImage: "&lt;%=asset_url('white_logo.png') %&gt;",
-      logoWidth: "165px",
-      logoHeight: "36px"
-  }
-});
+<pre class="highlight javascript"><code><span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span>
+  <span class="na">toolbar</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'orbita_toolbar_wrapper'</span><span class="p">,</span> <span class="na">links</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="na">url</span><span class="p">:</span> <span class="s1">'https://foo.com'</span><span class="p">,</span>
+        <span class="na">it</span><span class="p">:</span> <span class="s1">'Foo IT'</span><span class="p">,</span>
+        <span class="na">en</span><span class="p">:</span> <span class="s1">'Foo EN'</span>
+      <span class="p">},{</span>
+        <span class="na">url</span><span class="p">:</span> <span class="s1">'http://boo.com'</span><span class="p">,</span>
+        <span class="na">it</span><span class="p">:</span> <span class="s1">'Boo IT'</span><span class="p">,</span>
+        <span class="na">en</span><span class="p">:</span> <span class="s1">'Boo EN'</span>
+      <span class="p">},</span> <span class="p">{</span>
+        <span class="na">url</span><span class="p">:</span> <span class="s1">'/settings'</span><span class="p">,</span>
+        <span class="na">it</span><span class="p">:</span> <span class="s1">'Settings'</span><span class="p">,</span>
+        <span class="na">en</span><span class="p">:</span> <span class="s1">'Settings'</span><span class="p">,</span>
+        <span class="na">authorization</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">currentUser</span><span class="p">){</span> <span class="k">return</span> <span class="nx">currentUser</span> <span class="p">}</span>  
+      <span class="p">}],</span>
+      <span class="na">logoImage</span><span class="p">:</span> <span class="s2">"&lt;%=asset_url('white_logo.png') %&gt;"</span><span class="p">,</span>
+      <span class="na">logoWidth</span><span class="p">:</span> <span class="s2">"165px"</span><span class="p">,</span>
+      <span class="na">logoHeight</span><span class="p">:</span> <span class="s2">"36px"</span>
+  <span class="p">}</span>
+<span class="p">});</span>
 </code></pre>
 
 <h3 id="example-with-friend-button">Example with Friend Button</h3>
-<pre class="highlight plaintext"><code> &lt;div&gt;
-   &lt;p&gt;Alex Err with id 2&lt;/p&gt;
-   &lt;div id="button_connect"&gt;&lt;/div&gt;
- &lt;/div&gt;
- &lt;script type="text/javascript" charset="utf-8"&gt;
-   orbitaComponents.renderFriendshipButton({wrapperId: 'button_connect', userId: 2});
-&lt;/script&gt;
-</code></pre>
+<pre class="highlight javascript"><code> <span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+   <span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Alex</span> <span class="nx">Err</span> <span class="kd">with</span> <span class="nx">id</span> <span class="mi">2</span><span class="o">&lt;</span><span class="sr">/p</span><span class="err">&gt;
+</span>   <span class="o">&lt;</span><span class="nx">div</span> <span class="nx">id</span><span class="o">=</span><span class="s2">"button_connect"</span><span class="o">&gt;&lt;</span><span class="sr">/div</span><span class="err">&gt;
+</span> <span class="o">&lt;</span><span class="sr">/div</span><span class="err">&gt;
+</span> <span class="o">&lt;</span><span class="nx">script</span> <span class="nx">type</span><span class="o">=</span><span class="s2">"text/javascript"</span> <span class="nx">charset</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="o">&gt;</span>
+   <span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">renderFriendshipButton</span><span class="p">({</span><span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'button_connect'</span><span class="p">,</span> <span class="na">userId</span><span class="p">:</span> <span class="mi">2</span><span class="p">});</span>
+<span class="o">&lt;</span><span class="sr">/script</span><span class="err">&gt;
+</span></code></pre>
 
 <h3 id="adding-custom-links-to-user-menu-in-the-toolbar">Adding custom links to user menu in the toolbar</h3>
-<pre class="highlight plaintext"><code>orbitaComponents.init({
-  toolbar: {
-    userMenu: {
-      links: [
-        {
-          url: 'http://www.facebook.com',
-          it: 'Faccebooke',
-          en: 'Facebook'
-        }
-      ]
-    }
-  }
-})
+<pre class="highlight javascript"><code><span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span>
+  <span class="na">toolbar</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">userMenu</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">links</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="na">url</span><span class="p">:</span> <span class="s1">'http://www.facebook.com'</span><span class="p">,</span>
+          <span class="na">it</span><span class="p">:</span> <span class="s1">'Faccebooke'</span><span class="p">,</span>
+          <span class="na">en</span><span class="p">:</span> <span class="s1">'Facebook'</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">})</span>
 </code></pre>
 
 <ul>
@@ -442,7 +1055,7 @@ orbitaComponents.init({
 * <code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user</p>
 
 <p>Example:
-<code class="prettyprint">json
+<code class="prettyprint">javascript
 {
   &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
   &quot;type&quot;: &quot;FriendshipRequested&quot;,
@@ -487,7 +1100,7 @@ orbitaComponents.init({
 </ul>
 
 <p>Example:
-&ldquo;`json</p>
+&ldquo;`javascript</p>
 
 <p>{
   &quot;id&rdquo;: &ldquo;95494570-BA22-488E-AF9A-E272589ACEA2&rdquo;,
@@ -518,7 +1131,7 @@ orbitaComponents.init({
 </ul>
 
 <p>Example:
-&rdquo;`json</p>
+&rdquo;`javascript</p>
 
 <p>{
   &ldquo;id&rdquo;: &ldquo;95494570-BA22-488E-AF9A-E272589ACEA2&rdquo;,
@@ -549,7 +1162,7 @@ orbitaComponents.init({
 </ul>
 
 <p>Example:
-&rdquo;`json</p>
+&rdquo;`javascript</p>
 
 <p>{
   &ldquo;id&rdquo;: &ldquo;95494570-BA22-488E-AF9A-E272589ACEA2&rdquo;,
@@ -577,7 +1190,7 @@ orbitaComponents.init({
 </ul>
 
 <p>Example:
-<code class="prettyprint">json
+<code class="prettyprint">javascript
 {
   &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
   &quot;type&quot;: &quot;UserDeleted&quot;,
@@ -600,7 +1213,7 @@ orbitaComponents.init({
 </ul>
 
 <p>Example:
-<code class="prettyprint">json
+<code class="prettyprint">javascript
 {
   &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
   &quot;type&quot;: &quot;UserDeleted&quot;,
@@ -634,7 +1247,7 @@ orbitaComponents.init({
 </ul>
 
 <p>Example:
-<code class="prettyprint">json
+<code class="prettyprint">javascript
 {
   &quot;id&quot;: &quot;95494570-BA22-488E-AF9A-E272589ACEA2&quot;,
   &quot;type&quot;: &quot;ArtworkShared&quot;,
@@ -661,14 +1274,16 @@ orbitaComponents.init({
 
 <ul>
 <li><code class="prettyprint">rake db:seed</code></li>
-<li>Open localhost:5100, login with user: <code class="prettyprint">enricocarlesso@gmail.com</code> and password <code class="prettyprint">password</code></li>
-<li>Go to admin section, and create first application, add callback urls. (mark <code class="prettyprint">trusted</code> as true)
-Example:</li>
+<li>create via rails c an admin user (get a user from User.first and se is_admin to true)</li>
+<li>Open localhost:5100, login with admin user</li>
+<li>Go to admin section, and create first application, add callback urls. (mark <code class="prettyprint">trusted</code> as true)</li>
 </ul>
-<pre class="highlight json"><code><span class="w">  </span><span class="err">Redirect</span><span class="w"> </span><span class="err">uri:</span><span class="w"> </span><span class="s2">"http://portal.mytemplart-staging.com/users/auth/oauth51/callback"</span><span class="err">,</span><span class="w">
-  </span><span class="err">Uid:</span><span class="w"> </span><span class="s2">"dc58bccd82602fa1c86bdff342e3c627d44dd642dabf2e9b645ea0e501291d14"</span><span class="err">,</span><span class="w">
-  </span><span class="err">Secret:</span><span class="w"> </span><span class="s2">"a19c7a77185df47182dbe241a9e02614465da2dfe8f06d7fe888645465312001"</span><span class="w">
-</span></code></pre>
+
+<p>Example:</p>
+<pre class="highlight javascript"><code>  <span class="nx">Redirect</span> <span class="nx">uri</span><span class="err">:</span> <span class="s2">"http://portal.mysite-staging.com/users/auth/oauth51/callback"</span><span class="p">,</span>
+  <span class="nx">Uid</span><span class="err">:</span> <span class="s2">"dc58bccd82602fa1c86bdff342e3c627d44dd642dabf2e9b645ea0e501291d14"</span><span class="p">,</span>
+  <span class="nx">Secret</span><span class="err">:</span> <span class="s2">"a19c7a77185df47182dbe241a9e02614465da2dfe8f06d7fe888645465312001"</span>
+</code></pre>
 
 <p>Then go to your application (jwt_test, developers) and add this secret and id to secret.yml</p>
 
@@ -688,16 +1303,14 @@ Example:</li>
 <li><p>Create oauth application in oauth app.</p>
 
 <ul>
-<li>Login  into <code class="prettyprint">connect.mytemplart-staging.com as admin</code> and go to <code class="prettyprint">Dashboard</code></li>
+<li>Login  into <code class="prettyprint">connect.mysite-staging.com as admin</code> and go to <code class="prettyprint">Dashboard</code></li>
 <li>Navigate to <code class="prettyprint">Application</code> and click <code class="prettyprint">Add new</code></li>
-<li>Fill into: name <code class="prettyprint">application name</code>, Redirect uri <code class="prettyprint">http://my-site.mytemplart.com/users/auth/oauth51/callback</code>, Trusted <code class="prettyprint">true</code></li>
+<li>Fill into: name <code class="prettyprint">application name</code>, Redirect uri <code class="prettyprint">http://my-site.mysite.com/users/auth/oauth51/callback</code>, Trusted <code class="prettyprint">true</code></li>
 <li>Click <code class="prettyprint">Save</code> button</li>
-</ul></li>
-<li><p>Go to your application and open <code class="prettyprint">config/secrets.yml</code> (also put to <code class="prettyprint">.gitignore</code> this file)</p>
-
-<ul>
+<li>Go to your application and open <code class="prettyprint">config/secrets.yml</code> (also put to <code class="prettyprint">.gitignore</code> this file)</li>
 <li>Add your application secret code and uid to this file, example:</li>
-<li> <code class="prettyprint">ruby
+<li> 
+<code class="prettyprint">ruby
 oauth:
 client_id: 0e08f9a0d80790d1d945fabfb4a80987fb17a5ac0a423448f8dc318e141f0d0e
 client_secret: 657a4c196c50ec957804c87d3915ad5b1f0504def89682b5d50131f4e72df766
@@ -706,48 +1319,59 @@ app_url: http://localhost:5100
 </ul></li>
 </ul>
 
+<h2 id="how-to-compose-your-secret-yml-file">How to compose your secret.yml file</h2>
+
+<ul>
+<li><p>Rails.application.secrets.jwt_cookie - This is the name of the browser cookie where the JWT token will be stored. We use JWT for authentication. This must be the same for all services that will communicate with each other. For example, all orbita services in production must have the same cookie. The cookie used for orbita services in production must be different from the cookie used for orbita services in staging.</p></li>
+<li><p>Rails.application.secrets.cdn_url - This is the url for the components/cdn service. For example, orbita staging’s cdn service is at http://cdn-staging.getorbita.io while orbita production’s cdn service is at http://cdn.getorbita.io.</p></li>
+<li><p>Rails.application.secrets.amqp - We are expected to set 3 variables here which are vhost, username and password. Setting a virtual_host is a way for us to ensure that orbita services for staging do not mix up RabbitMQ messages with orbita services for production. We run one instance of RabbitMQ which is shared by multiple deployments. These details must be the same for services that will communicate with each other.</p></li>
+<li><p>Rails.application.secrets.oauth[&#39;client_id’] - In the oauth service, we’ll need to add the application. Once added, we’ll have oauth credentials for both client_id and client_secret. If I remember correctly, API key is client_id.</p></li>
+<li><p>Rails.application.secrets.oauth[&#39;client_secret’] - In the oauth service, we’ll need to add the application. Once added, we’ll have oauth credentials for both client_id and client_secret.</p></li>
+<li><p>Rails.application.secrets.oauth[&#39;app_url’] - This is the url for the oauth service. For example, in staging for orbita, it would be http://connect-staging.getorbita.io. For development, it would be something like http://localhost:5100. For production, it would be http://connect.getorbita.io.</p></li>
+</ul>
+
 <h3 id="login-section">Login section</h3>
 
 <p>For login, you can use oauth provider, and implement it in your application. Let&rsquo;s do it:
  * Add to <code class="prettyprint">devise.rb</code>:</p>
-<pre class="highlight plaintext"><code>config.omniauth :oauth51, Rails.application.secrets.oauth['client_id'],   Rails.application.secrets.oauth['client_secret'], scope: 'public accounts points', client_options: {site: Rails.application.secrets.oauth['app_url']}
+<pre class="highlight javascript"><code><span class="nx">config</span><span class="p">.</span><span class="nx">omniauth</span> <span class="err">:</span><span class="nx">oauth51</span><span class="p">,</span> <span class="nx">Rails</span><span class="p">.</span><span class="nx">application</span><span class="p">.</span><span class="nx">secrets</span><span class="p">.</span><span class="nx">oauth</span><span class="p">[</span><span class="s1">'client_id'</span><span class="p">],</span>   <span class="nx">Rails</span><span class="p">.</span><span class="nx">application</span><span class="p">.</span><span class="nx">secrets</span><span class="p">.</span><span class="nx">oauth</span><span class="p">[</span><span class="s1">'client_secret'</span><span class="p">],</span> <span class="nx">scope</span><span class="err">:</span> <span class="s1">'public accounts points'</span><span class="p">,</span> <span class="nx">client_options</span><span class="err">:</span> <span class="p">{</span><span class="nl">site</span><span class="p">:</span> <span class="nx">Rails</span><span class="p">.</span><span class="nx">application</span><span class="p">.</span><span class="nx">secrets</span><span class="p">.</span><span class="nx">oauth</span><span class="p">[</span><span class="s1">'app_url'</span><span class="p">]}</span>
 
 </code></pre>
 
 <ul>
 <li>Create <code class="prettyprint">omniauth_callbacks_controller.rb</code> in <code class="prettyprint">app/controllers</code> folder:</li>
 </ul>
-<pre class="highlight plaintext"><code>  class OmniauthCallbacksController &lt; Devise::OmniauthCallbacksController
+<pre class="highlight ruby"><code>  <span class="k">class</span> <span class="nc">OmniauthCallbacksController</span> <span class="o">&lt;</span> <span class="no">Devise</span><span class="o">::</span><span class="no">OmniauthCallbacksController</span>
 
-    COOKIES_KEY = :_jwt_token
-    COOKIES_REFRESH_KEY = :_refresh_token
+    <span class="no">COOKIES_KEY</span> <span class="o">=</span> <span class="ss">:_jwt_token</span>
+    <span class="no">COOKIES_REFRESH_KEY</span> <span class="o">=</span> <span class="ss">:_refresh_token</span>
 
-    def oauth51
-      o51_authentication_token = request.env["omniauth.auth"].credentials.token
-      o51_refresh_token = request.env["omniauth.auth"].credentials.refresh_token
+    <span class="k">def</span> <span class="nf">oauth51</span>
+      <span class="n">o51_authentication_token</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="nf">env</span><span class="p">[</span><span class="s2">"omniauth.auth"</span><span class="p">].</span><span class="nf">credentials</span><span class="p">.</span><span class="nf">token</span>
+      <span class="n">o51_refresh_token</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="nf">env</span><span class="p">[</span><span class="s2">"omniauth.auth"</span><span class="p">].</span><span class="nf">credentials</span><span class="p">.</span><span class="nf">refresh_token</span>
 
-      ### We need set token to cookies, then all apps can use it for login user.
-      set_auth_cookies(o51_authentication_token, o51_refresh_token)
-      client = Oauth51Client::Client.new(o51_authentication_token, Rails.application.secrets.oauth['app_url'])
-      client.me # returns info about user
-      User.create_from_o51(client.me)
-    end
+      <span class="c1">### We need set token to cookies, then all apps can use it for login user.</span>
+      <span class="n">set_auth_cookies</span><span class="p">(</span><span class="n">o51_authentication_token</span><span class="p">,</span> <span class="n">o51_refresh_token</span><span class="p">)</span>
+      <span class="n">client</span> <span class="o">=</span> <span class="no">Oauth51Client</span><span class="o">::</span><span class="no">Client</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">o51_authentication_token</span><span class="p">,</span> <span class="no">Rails</span><span class="p">.</span><span class="nf">application</span><span class="p">.</span><span class="nf">secrets</span><span class="p">.</span><span class="nf">oauth</span><span class="p">[</span><span class="s1">'app_url'</span><span class="p">])</span>
+      <span class="n">client</span><span class="p">.</span><span class="nf">me</span> <span class="c1"># returns info about user</span>
+      <span class="no">User</span><span class="p">.</span><span class="nf">create_from_o51</span><span class="p">(</span><span class="n">client</span><span class="p">.</span><span class="nf">me</span><span class="p">)</span>
+    <span class="k">end</span>
 
-    private
+    <span class="kp">private</span>
 
-    def set_auth_cookies(jwt_token, refresh_token)
-      cookies[COOKIES_KEY] = {
-        value: jwt_token,
-        expires: 7.days.from_now,
-        domain: :all
-      }
-      cookies[COOKIES_REFRESH_KEY] = {
-        value: refresh_token,
-        expires: 7.days.from_now,
-        domain: :all
-      }
-    end
-  end
+    <span class="k">def</span> <span class="nf">set_auth_cookies</span><span class="p">(</span><span class="n">jwt_token</span><span class="p">,</span> <span class="n">refresh_token</span><span class="p">)</span>
+      <span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="ss">value: </span><span class="n">jwt_token</span><span class="p">,</span>
+        <span class="ss">expires: </span><span class="mi">7</span><span class="p">.</span><span class="nf">days</span><span class="p">.</span><span class="nf">from_now</span><span class="p">,</span>
+        <span class="ss">domain: :all</span>
+      <span class="p">}</span>
+      <span class="n">cookies</span><span class="p">[</span><span class="no">COOKIES_REFRESH_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="ss">value: </span><span class="n">refresh_token</span><span class="p">,</span>
+        <span class="ss">expires: </span><span class="mi">7</span><span class="p">.</span><span class="nf">days</span><span class="p">.</span><span class="nf">from_now</span><span class="p">,</span>
+        <span class="ss">domain: :all</span>
+      <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 </code></pre>
 
 <ul>
@@ -818,7 +1442,7 @@ app_url: http://localhost:5100
 <h2 id="now-our-application-can-login-by-token-and-go-to-all-applications-as-logined-user">Now Our application can login by token, and go to all applications as logined user.</h2>
 
 <p>Next step - add some components to our application. Lets add <code class="prettyprint">toolbar</code> with notifications:
- * Add to config/secrets.yml cdn url: <code class="prettyprint">cdn_url: http://cdn.mytemplart-staging.com</code>
+ * Add to config/secrets.yml cdn url: <code class="prettyprint">cdn_url: http://cdn.mysite-staging.com</code>
  * Add to your layout next code:</p>
 <pre class="highlight html"><code><span class="nt">&lt;head&gt;</span>  
   <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"&lt;%= Rails.application.secrets.cdn_url %&gt;/orbita_components.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
@@ -841,11 +1465,11 @@ app_url: http://localhost:5100
     <span class="kd">var</span> <span class="nx">store</span> <span class="o">=</span> <span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">configureStoreFunction</span><span class="p">(</span><span class="nb">window</span><span class="p">.</span><span class="nx">Reducers</span><span class="p">);</span>
     <span class="c1">//You can use store in your own redux application if you use react, or ignore it.</span>
     <span class="nx">orbitaComponents</span><span class="p">.</span><span class="nx">renderToolbar</span><span class="p">({</span><span class="na">wrapperId</span><span class="p">:</span> <span class="s1">'orbita_toolbar_wrapper'</span><span class="p">,</span> <span class="na">store</span><span class="p">:</span> <span class="nx">store</span><span class="p">,</span> <span class="na">links</span><span class="p">:</span> <span class="p">[{</span>
-      <span class="na">url</span><span class="p">:</span> <span class="s1">'https://www.mytemplart.com/inventory/users/sign_in'</span><span class="p">,</span>
+      <span class="na">url</span><span class="p">:</span> <span class="s1">'https://www.mysite.com/inventory/users/sign_in'</span><span class="p">,</span>
       <span class="na">it</span><span class="p">:</span> <span class="s1">'Inventario'</span><span class="p">,</span>
       <span class="na">en</span><span class="p">:</span> <span class="s1">'Inventory'</span>
     <span class="p">},{</span>
-      <span class="na">url</span><span class="p">:</span> <span class="s1">'http://www.mytemplart.com'</span><span class="p">,</span>
+      <span class="na">url</span><span class="p">:</span> <span class="s1">'http://www.mysite.com'</span><span class="p">,</span>
       <span class="na">it</span><span class="p">:</span> <span class="s1">'Magazine'</span><span class="p">,</span>
       <span class="na">en</span><span class="p">:</span> <span class="s1">'Magazine'</span>
     <span class="p">}]});</span>
@@ -879,23 +1503,23 @@ app_url: http://localhost:5100
 <h2 id="configuration">Configuration</h2>
 
 <p>We will need to edit the <a href="https://git.coders51.com/coders51/orbita/blob/master/config.exs">config.exs</a> file found in the root directory of the <code class="prettyprint">orbita</code> repo. A <code class="prettyprint">get_configs/1</code> function is expected for the instance you want to setup. The <code class="prettyprint">get_configs/1</code> function should return a keyword list with certain options. If you want to generate configs for a <code class="prettyprint">&quot;foo&quot;</code> instance, we define the following <code class="prettyprint">get_configs/1</code> function:</p>
-<pre class="highlight plaintext"><code>  def get_configs("foo") do
-    [apps: @apps, # a list of apps you want to generate configs for. refer to @apps to see all available options
-     ports: %{
+<pre class="highlight ruby"><code>  <span class="k">def</span> <span class="nf">get_configs</span><span class="p">(</span><span class="s2">"foo"</span><span class="p">)</span> <span class="k">do</span>
+    <span class="p">[</span><span class="ss">apps: </span><span class="vi">@apps</span><span class="p">,</span> <span class="c1"># a list of apps you want to generate configs for. refer to @apps to see all available options</span>
+     <span class="ss">ports: </span><span class="sx">%{
        "networking" =&gt; "4030",
        "notifications" =&gt; "4130",
-       "cookietrack" =&gt; "9040"}, # a mapping of ports for certain apps
-     domain: "foo.com", # the parent domain for the services
-     namespace: "foo", # the namespace we use to refer to this instance. typically the same as the argument expected by  the function
-     server: "deploy@orbita.lan.coders51.com", # the server we will deploy to
-     env: "production"] # either "staging" or "production" environment
-  end
+       "cookietrack" =&gt; "9040"}</span><span class="p">,</span> <span class="c1"># a mapping of ports for certain apps</span>
+     <span class="ss">domain: </span><span class="s2">"foo.com"</span><span class="p">,</span> <span class="c1"># the parent domain for the services</span>
+     <span class="ss">namespace: </span><span class="s2">"foo"</span><span class="p">,</span> <span class="c1"># the namespace we use to refer to this instance. typically the same as the argument expected by  the function</span>
+     <span class="ss">server: </span><span class="s2">"deploy@orbita.lan.coders51.com"</span><span class="p">,</span> <span class="c1"># the server we will deploy to</span>
+     <span class="ss">env: </span><span class="s2">"production"</span><span class="p">]</span> <span class="c1"># either "staging" or "production" environment</span>
+  <span class="k">end</span>
 </code></pre>
 
 <h2 id="generation-of-configurations">Generation of Configurations</h2>
 
 <p>From the command line, go to the root of the <code class="prettyprint">orbita</code> directory. From there, we run the following:</p>
-<pre class="highlight plaintext"><code>$ ./gen_configs -n foo
+<pre class="highlight shell"><code><span class="gp">$ </span>./gen_configs -n foo
 </code></pre>
 
 <p>The above command generates capistrano, nginx, supervisor, unicorn, thin, secrets.yml and vm.args configs for each of the apps depending on the templates that exist for them. You can check the templates available for each app under <code class="prettyprint">./templates</code> directory in the orbita repo.</p>
@@ -903,7 +1527,7 @@ app_url: http://localhost:5100
 <h2 id="first-deployment-of-each-service-app">First Deployment of Each Service/App</h2>
 
 <p>Before deploying, go to the repo of either Networking, Notifications or Oauth and then run the ff:
-<code class="prettyprint">
+<code class="prettyprint">shell
 $ bundle exec cap foo_production setup:amqp
 </code></p>
 
@@ -912,7 +1536,7 @@ $ bundle exec cap foo_production setup:amqp
 <h3 id="all-services-except-dashboard-and-components-cdn-are-deployed-this-way">All services except Dashboard and Components/CDN are deployed this way:</h3>
 
 <p>Make sure you are in the root directory of the service we want to deploy.
-<code class="prettyprint">
+<code class="prettyprint">shell
 $ git commit -am &quot;foo_production deploy configs&quot;
 $ bundle exec cap foo_production deploy:initial # if env is &quot;staging&quot; then it should be foo_staging
 </code></p>
@@ -922,13 +1546,13 @@ $ bundle exec cap foo_production deploy:initial # if env is &quot;staging&quot; 
 <h3 id="for-dashboard-we-do-the-ff">For Dashboard, we do the ff:</h3>
 
 <p>Before deploying, you will need to add the necessary configs for your deployment to <code class="prettyprint">config/environment.js</code>. Commit and push that to the remote host before running the below commands.</p>
-<pre class="highlight plaintext"><code>$ ./setup_deploy foo_dashboard_production deploy@server.com  # the first arg is the name of the dashboard app which is the namespace + dashboard + env
-$ ember deploy foo_dashboard_production
+<pre class="highlight shell"><code><span class="gp">$ </span>./setup_deploy foo_dashboard_production deploy@server.com  <span class="c"># the first arg is the name of the dashboard app which is the namespace + dashboard + env</span>
+<span class="gp">$ </span>ember deploy foo_dashboard_production
 </code></pre>
 
 <h3 id="for-components-cdn-we-do">For Components/CDN, we do:</h3>
-<pre class="highlight plaintext"><code>$ git commit -am "foo_production deploy configs"
-$ bundle exec cap foo_production copy:initial
+<pre class="highlight shell"><code><span class="gp">$ </span>git commit -am <span class="s2">"foo_production deploy configs"</span>
+<span class="gp">$ </span>bundle <span class="nb">exec </span>cap foo_production copy:initial
 </code></pre>
 
 <h3 id="important-notes">Important Notes</h3>
@@ -946,12 +1570,12 @@ $ bundle exec cap foo_production copy:initial
 <h2 id="staging-remote-urls">Staging Remote URLs</h2>
 
 <ul>
-<li>http://connect.mytemplart-staging.com -&gt; It&rsquo;s the ouath server -&gt; mta-oauth</li>
-<li>http://portal.mytemplart-staging.com -&gt; It&rsquo;s the portal -&gt; mta-test-jwt</li>
-<li>http://developers.mytemplart-staging.com -&gt; It&rsquo;s the site for the developers -&gt; mta-developers</li>
-<li>http://networking.mytemplart-staging.com -&gt; It&rsquo;s the networking service -&gt; mta-networking</li>
-<li>http://notification.mytemplart-staging.com -&gt; It&rsquo;s the notification server -&gt; mta-notification</li>
-<li>http://cdn.mytemplart-staging.com -&gt; We use for distribute the js compoments file -&gt; mta-components</li>
+<li>http://connect.mysite-staging.com -&gt; It&rsquo;s the ouath server -&gt; mta-oauth</li>
+<li>http://portal.mysite-staging.com -&gt; It&rsquo;s the portal -&gt; mta-test-jwt</li>
+<li>http://developers.mysite-staging.com -&gt; It&rsquo;s the site for the developers -&gt; mta-developers</li>
+<li>http://networking.mysite-staging.com -&gt; It&rsquo;s the networking service -&gt; mta-networking</li>
+<li>http://notification.mysite-staging.com -&gt; It&rsquo;s the notification server -&gt; mta-notification</li>
+<li>http://cdn.mysite-staging.com -&gt; We use for distribute the js compoments file -&gt; mta-components</li>
 </ul>
 
 <h1 id="vagrant-provisioning">Vagrant Provisioning</h1>
@@ -979,7 +1603,7 @@ $ bundle exec cap foo_production copy:initial
 <ol>
 <li>Install Ansible in your dev machine</li>
 <li>Set staging host in <code class="prettyprint">/etc/ansible/hosts</code> by adding the following to that file:
-<code class="prettyprint">
+<code class="prettyprint">ruby
 [staging]
 deploy@orbita.lan.coders51.com
 </code></li>
@@ -991,11 +1615,11 @@ deploy@orbita.lan.coders51.com
 <h1 id="deploying-orbita-services">Deploying Orbita Services</h1>
 
 <h2 id="deploying-services-except-dashboard">Deploying Services Except Dashboard</h2>
-<pre class="highlight plaintext"><code>$ bundle exec cap foo_production deploy
+<pre class="highlight shell"><code><span class="gp">$ </span>bundle <span class="nb">exec </span>cap foo_production deploy
 </code></pre>
 
 <h2 id="deploying-dashboard">Deploying Dashboard</h2>
-<pre class="highlight plaintext"><code>$ ember deploy foo_dashboard_production
+<pre class="highlight shell"><code><span class="gp">$ </span>ember deploy foo_dashboard_production
 </code></pre>
 
 <h1 id="dev-machine-setup">Dev Machine Setup</h1>
