@@ -114,6 +114,7 @@
       </div>
         <ul class="toc-footer">
             <li><a href='http://getorbita.io'>Follow orbita</a></li>
+            <li>documentation version v.0.1</li>
             <li><a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a></li>
         </ul>
     </div>
@@ -128,7 +129,6 @@
 <li><a href="/#introduction">Introduction</a></li>
 <li><a href="/#general-architecture-details">General Architecture Details</a></li>
 <li><a href="/#quick-reference-for-setup-of-a-production-server">Quick reference for a setup of a production server</a></li>
-<li><a href="/#where-are-the-log">Where are the log</a></li>
 <li><a href="/#http-api-documentation">HTTP API Documentation</a></li>
 <li><a href="/#authentication-amp-authorization">Authentication and Authorization</a></li>
 <li><a href="/#orbita-components-api">Orbita Components API</a></li>
@@ -209,11 +209,12 @@
 <ul>
 <li>RabbitMQ v 3.6 (we suggest 3.6.2)</li>
 <li>PostgreSQL v 9.4&gt;, if you&rsquo;re in an Amazon server we suggest PostgresSQL RDS with multi-zone deploy and backup of a week.</li>
-<li>nginx v 1.9.3&gt;</li>
+<li>nginx v 1.9.3&gt; (if you prefer it could be ok also Apache)</li>
 <li>nodejs v LTS 4.4.4</li>
-<li>package manager ruby RVM</li>
-<li>passenger for integration between ruby ed nginx</li>
+<li>package manager ruby RVM (if your prefer it&rsquo;s ok also rbenv)</li>
+<li>passenger for integration between ruby and nginx/apache</li>
 <li>supervisor to manage runtime process</li>
+<li>orientdb [this is not mandatory at the beginning, you can choose to install it in a second moment]</li>
 </ul>
 
 <p>Components are in ruby on rails and elixir, for some component we need:</p>
@@ -221,10 +222,6 @@
 <ul>
 <li>Erlang v 18.3, and Elixir 1.2X we suggest esl-erlang downloadable from this link <a href="https://www.erlang-solutions.com/resources/download.html">https://www.erlang-solutions.com/resources/download.html</a> and <a href="http://elixir-lang.org/install.html#unix-and-unix-like">http://elixir-lang.org/install.html#unix-and-unix-like</a></li>
 </ul>
-
-<h1 id="where-are-the-log">where are the log</h1>
-
-<p>BLA BLA GPAD</p>
 
 <h1 id="http-api-documentation">HTTP API Documentation</h1>
 
