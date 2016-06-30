@@ -5,51 +5,70 @@ language_tabs:
   - shell
   - ruby
   - javascript
+  - html
 
 toc_footers:
   - <a href='http://getorbita.io'>Follow orbita</a>
   - <a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a>
 
-includes:
-  - errors
-
 search: true
 ---
 
-# Introduction
 
 # Orbita
-This repository will be used to contain everything that needs to be shared between all the services/repositories, in particular
+
+## Summary
+- [Introduction](/#introduction)
+- [General Architecture Details](/#general-architecture-details)
+- [HTTP API Documentation](/#http-api-documentation)
+- [Authentication and Authorization](/#authentication-amp-authorization)
+- [Orbita Components API](/#orbita-components-api)
+- [Verify JWT](/#verify-jwt-token)
+- [Domain Events](/#domain-events)
+- [How to create new application and use all orbita services](/#how-to-create-new-application-and-use-all-orbita-services)
+- [How to store user data in Orbita Bucket service](/#how-to-store-user-data-in-orbita-bucket-service)
+
+## Deployment and Server Configuration
+- [How to Setup A New Orbita Instance](/#how-to-setup-a-new-orbita-instance)
+- [Provisioning Vagrant](/#vagrant-provisioning)
+- [Provisioning Staging Server](/#provisioning-staging-server)
+- [How to Deploy Services](/#deploying-orbita-services)
+- [Dev Machine Setup](/#dev-machine-setup)
+
+
+# Introduction
+
+orbita is a product useful to:
+
+- centralize all your user base on a unique database
+- analyze their behaviour (misure their action and how they interact with you)
+- have web components to integrate in all your apps
+- have a set of API for your web and mobile apps to speed up development
+- have landing page to mix your marketing analysis with real registration to your platform
+- distribute your brand connection with plugin
+- create a network of your users with a graph db
+- have realtime notification between your different application
+- store big data associated to your users
+- have webhook with your mailchimp list
+
+Using orbita you can reduce your time to market and your time to break even
+
+orbita is a product by [coders51](http://coders51.com)
 
 * This repository's wiki will hold the documentation about: API, domain concepts, shared data, etc...
 * Setup process and project automation scripts
 * Integration and smoke tests
 
-This projects is based on microservices and exchange [domain events](DomainEvents) on a [event bus](EventBus).
+This projects is based on microservices and exchange [domain events](#domain-events) on a [event bus](event-bus).
 
 The actual services are:
 
-* OAuth service - The repository is [here](https://git.coders51.com/coders51/orbita-oauth/tree/master). It's **_write a little description here_**.
-* Networking service - The repository is [here](https://git.coders51.com/coders51/orbita-networking/tree/master). This service maps the relationships between users and other entities. It responds to events like `"FriendshipRequested"` and similar events that may involve creating of, updating of and querying by relationships. In the case of a `"FriendshipRequested"` event, a `FriendRequest` between two users is saved in its data store. Later on, this `friend_request` may be accepted when this service receives `"FriendshipAccepted"` event that involves the same two users. By default, this runs in `localhost:4001` in development.
-* Notification service - The repository is [here](https://git.coders51.com/coders51/orbita-notification/tree/master). It's **_write a little description here_**.
-
-## Summary
-- [General Architecture Details](/#general-architecture-details)
-- [HTTP API Documentation](/#http-api-documentation)
-- [Authentication and Authorization](/#authentication-and-authorization)
-- [Orbita Components API](/#orbita-components-api)
-- [Authentication JWT Format & Authentication API](/#jwt)
-- [Domain Events](/#domain-events)
-- [How To Run Local](/#how-to-run-local)
-- [How to create new application](/#how-to-create-new-application)
-- [How to store user data in Orbita Bucket service](/#how-to-make-requests-to-oauth-for-storing-user-data-in-bucket)
-
-## Deployment and Server Configuration
-- [How to Setup A New Orbita Instance](/#how-to-setup-orbita-instance)
-- [Staging Environment And Deploy](/#staging-environment-and-deploy)
-- [Provisioning Vagrant](/#provisioning-vagrant)
-- [Provisioning Staging Server](/#provisioning-staging)
-- [How to Deploy Services](/#how-to-deploy-services)
+* OAuth service - It's the core of orbita. All the application and service use api from oauth. You can have a link/button in all your app: CONNECT WITH MY BRAND easy as you make "connect with facebook".
+* Networking service - This service maps the relationships between users and other entities. It responds to events like `"FriendshipRequested"` and similar events that may involve creating of, updating of and querying by relationships. In the case of a `"FriendshipRequested"` event, a `FriendRequest` between two users is saved in its data store. Later on, this `friend_request` may be accepted when this service receives `"FriendshipAccepted"` event that involves the same two users. By default, this runs in `localhost:4001` in development.
+* Notification service - A realtime service for every kind of notification you need (web/desktop/mobile)
+* Wordpress plugin - give to your marketing manager the power to make landing page with visual composer and add a link/button to connect to your **real** user base
+* Bucket data service - store complex data different by application and user and use it to profile action and specific data
+* Dashboard analytic - profilation and marketing tool with mailchimp webhook
 
 # General Architecture Details
 
@@ -82,7 +101,7 @@ $ npm -g install aglio
 $ aglio -i http-api-mta-notifications.md -o http-api-mta-notifications.html
 ```
 
-# Orbita Authentication & Authorization
+# Authentication & Authorization
 
 ## Introduction
 All services share a secret key
@@ -271,9 +290,9 @@ Every domain event will have the same metadata
 * `correlation_id` (`string`): an id that can be used to create relationship between events (ex. If I group friendship events using the `correlation_id` I will expect to see groups of events like [`FriendshipRequested`, `FriendshipAccepted`] or [`FriendshipRequested`, `FriendshipRefused`])
 * `payload` (`object`): event specific data
 
-## Domain Events
+# Domain Events
 
-### FriendshipRequested
+## FriendshipRequested
 
 Emitted on channel `orbita-networking`
 
@@ -296,7 +315,7 @@ Example:
 }
 ```
 
-### FriendshipAccepted
+## FriendshipAccepted
 
 Emitted on channel `orbita-networking`
 
@@ -305,7 +324,7 @@ Emitted from the orbita-networking service when a friendship request has been ac
 * `to` (`UUID`): the `OAUTH` id of the target user
 * `request_id` : the id of the friend request
 
-### FriendshipRefused
+## FriendshipRefused
 
 Emitted on channel `orbita-networking`
 
@@ -314,7 +333,7 @@ Emitted from the orbita-networking service when a friendship request has been re
 * `to` (`UUID`): the `OAUTH` id of the target user
 * `request_id` : the id of the friend request
 
-### UserCreated
+## UserCreated
 
 Emitted on channel `orbita-oauth`
 
@@ -343,7 +362,7 @@ Example:
 }
 ```
 
-### UserUpdated
+## UserUpdated
 
 Emitted on channel `orbita-oauth`
 
@@ -372,7 +391,7 @@ Example:
 }
 ```
 
-### User language changed
+## User language changed
 
 Emitted on channel `orbita-oauth`
 
@@ -398,7 +417,7 @@ Example:
 }
 ```
 
-### UserDeleted
+## UserDeleted
 
 Emitted on channel `orbita-oauth`
 
@@ -421,7 +440,7 @@ Example:
 }
 ```
 
-### UserLogout
+## UserLogout
 * `id` (`UUID`): an `UUID` generated by the service that emitted the event
 * `type` (`string`): the type of the event
 * `source` (`string`): the name of the service that emitted the event
@@ -441,7 +460,7 @@ Example:
 }
 ```
 
-### ArtworkShared
+## ArtworkShared
 
 Emitted on channel `inventory`
 
