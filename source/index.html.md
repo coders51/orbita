@@ -9,6 +9,7 @@ language_tabs:
 
 toc_footers:
   - <a href='http://getorbita.io'>Follow orbita</a>
+  - documentation version v.0.1
   - <a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a>
 
 search: true
@@ -20,6 +21,7 @@ search: true
 ## Summary
 - [Introduction](/#introduction)
 - [General Architecture Details](/#general-architecture-details)
+- [Quick reference for a setup of a production server](/#quick-reference-for-setup-of-a-production-server)
 - [HTTP API Documentation](/#http-api-documentation)
 - [Authentication and Authorization](/#authentication-amp-authorization)
 - [Orbita Components API](/#orbita-components-api)
@@ -72,18 +74,232 @@ The actual services are:
 
 # General Architecture Details
 
-Some info about our architecture:
+orbita is a microservice collaboration platform.
 
-* http://www.martinfowler.com/eaaDev/EventCollaboration.html
-* http://www.martinfowler.com/eaaDev/DomainEvent.html
-* http://www.martinfowler.com/eaaDev/EventSourcing.html
+![Image of Yaktocat](/images/orbitaarch.png)
+
+Some info about this kind of architecture:
+
+* [Event Collaboration](http://www.martinfowler.com/eaaDev/EventCollaboration.html)
+* [Domain Event](http://www.martinfowler.com/eaaDev/DomainEvent.html)
+* [Event Sourcing](http://www.martinfowler.com/eaaDev/EventSourcing.html)
+
+
+#Quick reference for setup of a production server
+
+To install orbita on an existing server you need the following environment on your production server:
+
+- RabbitMQ v 3.6 (we suggest 3.6.2)
+- PostgreSQL v 9.4>, if you're in an Amazon server we suggest PostgresSQL RDS with multi-zone deploy and backup of a week.
+- nginx v 1.9.3> (if you prefer it could be ok also Apache)
+- nodejs v LTS 4.4.4
+- package manager ruby RVM (if your prefer it's ok also rbenv)
+- passenger for integration between ruby and nginx/apache
+- supervisor to manage runtime process
+- orientdb [this is not mandatory at the beginning, you can choose to install it in a second moment]
+
+Components are in ruby on rails and elixir, for some component we need:
+
+- Erlang v 18.3, and Elixir 1.2X we suggest esl-erlang downloadable from this link [https://www.erlang-solutions.com/resources/download.html](https://www.erlang-solutions.com/resources/download.html) and [http://elixir-lang.org/install.html#unix-and-unix-like](http://elixir-lang.org/install.html#unix-and-unix-like)
+
 
 # HTTP API Documentation
 The documentation is written in markdown following the [API Blueprint Specification](https://github.com/apiaryio/api-blueprint)
 
-## Available Documentation
-* [orbita-notifications](#orbita-notifications-http-api)
-* [orbita-networking](#orbita-networking-http-api)
+
+## Notifications API
+Notification service
+
+### Group User Notifications
+All these requests requires a JWT token to identify the user
+
+
+## Unread Notifications [/users/{ID}/notifications/unread]
+All the unread notifications addressed to the identified user. The `JWT_TOKEN` is given by the OAuth server and contains encrypted informations about the user.
+
++ Parameters
+  + ID: 42 (required, string) - OAuth user identifier
+
+
+### Retrieve Unread Notifications [GET]
+Retrieve all the unread notifications of the user
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
+
++ Response 200 (application/json)
+  + Body
+
+            [
+              {
+                "id": 12,
+                "message": "Rick has accepted your friendship request",
+                "from": "7",
+                "to": "8",
+                "require_input": false
+              }
+            ]
+
++ Response 401
+
+### Mark Notifications As Read [DELETE]
+Mark all the unread notifications of the user as read
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+
++ Response 202
++ Response 401
+
+
+## Unread Notification [/notifications/unread/{ID}]
+Unread notification. The `JWT_TOKEN` is given by the OAuth server and contains encrypted informations about the user.
+
++ Parameters
+  + ID: 77 (required, string) - Notification identifier
+
+### Mark Notification As Read [DELETE]
+Mark single notification as read. The authenticated user must be the sender or the receiver of the notification
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+
++ Response 202
++ Response 401
++ Response 404
+
+
+## Notification [/notifications/{ID}]
+Notification. The `JWT_TOKEN` is given by the OAuth server and contains encrypted informations about the user.
+
++ Parameters
+  + ID: 77 (required, string) - Notification identifier
+
+### Retrieve Notification [GET]
+**[NOT IMPLEMENTED YET]** Retrieve single notification. The authenticated user must be the sender or the receiver of the notification
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
+
++ Response 200 (application/json)
+  + Body
+
+            {
+              "id": 12,
+              "message": "Rick has accepted your friendship request",
+              "from": "7",
+              "to": "8",
+              "read": true
+            }
+
++ Response 401
+
+### Delete Notification [DELETE]
+**[NOT IMPLEMENTED YET]** Delete the single notification.
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+
++ Response 202
++ Response 401
+
+### Enable notifications [POST /users/:user/notifications/by/:media/enabled]
+
+Enables a given notification media (e.g., email or websockets) for a given user.
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/json
+
++ Response: 200
+
+### Disable notifications [POST /users/:user/notifications/by/:media/disabled]
+
+Disables a given notification media (e.g., email or websockets) for a given user.
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/json
+
++ Response: 200
+
+### Read notifications settings for a media [GET /users/:user/notifications/by/:media]
+
+Tells whether notifications on the given `:media` are enabled for the given `:user`.
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/json
+
++ Response: 200
+  + Body
+
+            {"enabled": true}
+
+### Read notifications settings for all media [GET /users/:user/notifications/by/:media]
+
+Tells whether notifications are enabled/disabled for each media for the given `:user`.
+
++ Request
+  + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/json
+
++ Response: 200
+  + Body
+
+            {
+              "email": true,
+              "ws": false,
+              ...
+            }
+
+### Group WebSocket
+
+## WebSocket Library [/js/app.js]
+The library to use to establish the WebSocket connection. See [the official documentation](http://www.phoenixframework.org/docs/channels) on how to use it client side.
+
+### Retrieve WebSocket Library [GET]
+
++ Response 200
+
+
+## WebSocket Handshake [/socket/websocket?jwt_token={JWT_TOKEN}]
+To establish a WebSocket connection, the client sends a WebSocket handshake request, for which the server returns a WebSocket handshake response. The `JWT_TOKEN` is given by the OAuth server and contains encrypted informations about the user.
+
++ Parameters
+  + JWT_TOKEN: "eyJ0eXAiOiJKV..." (required, string) - Authentication token
+
+### WebSocket Handshake [GET]
+
++ Request
+  + Headers
+
+            Upgrade: websocket
+            Connection: Upgrade
+            Cache-Control: no-cache
+
++ Response 101
+
 
 ## How to generate HTML
 Using [aglio](https://github.com/danielgtaylor/aglio) an HTML file can be generate starting from a Blueprint file
@@ -101,6 +317,212 @@ $ npm -g install aglio
 $ aglio -i http-api-mta-notifications.md -o http-api-mta-notifications.html
 ```
 
+FORMAT: 1A
+
+## Networking API
+Networking service. The endpoints on this API expose resources that represent relationships across different users and things.
+
+## Group Friend Requests
+The friend request resource represents a request to connect from one user to another. A friendship between users can only be created when a friendship request has been accepted. There are five(5) endpoints for this resource..
+
+## List of Friend Requests [/friend_requests]
+A resource representing all of a user's friend requests.
+
+### Fetch all Friend Requests [GET]
+Fetches all friend requests sent and received by a user. The user is identified through the `Authorization` header provided.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (application/json)
+  + Body
+
+            [
+              {
+                "oauth_id": "12",
+                "received": true,
+                "sent": true
+              }
+            ]
+
+
+### Create a Friend Request [POST]
+It expects a `to` param which should be an oauth_id of a user to whom the request is sent to. An `Authorization` header is required to identify the user who sent the request. You may only create one (1) friend request between two (2) users.
+
++ Parameters
+  + to: "77" (required, string) - User ID of the user to whom the request is addressed to.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (application/json)
+  + Body
+
+            [
+              {
+                "oauth_id": "12",
+                "sent": true
+              }
+            ]
+
+
+## List of Friend Requests [/friend_requests/{id}]
+A resource representing all of a user's friend requests.
+
+### Deletes a Friend Request [DELETE]
+An `Authorization` header is required to identify the user who sent the request.
+
++ Parameters
+  + id: "77" (required, string) - User ID of the user to whom the request is addressed to.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (text/plain)
+  + Body
+
+            Ok
+
+## Accept Friend Request [/friend_requests/{from}/accept]
+For accepting a friend request.
+
+### Accept a Friend Request [PUT]
+Deleting a friend request and creates a friend resource in its place. The user accepting the friend request is identified through the `Authorization` header. You can only accept a friend request once.
+
++ Parameters
+  + from: "77" (required, string) - User ID of the user who sent the request.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (text/plain)
+  + Body
+
+            Ok
+
+
+## Refuse Friend Request [/friend_requests/{from}/refuse]
+For refusing a friend request.
+
+### Refuse a Friend Request [DELETE]
+The user accepting the friend request is identified through the `Authorization` header.
+
++ Parameters
+  + from: "77" (required, string) - User ID of the user who sent the request.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (text/plain)
+  + Body
+
+            Ok
+
+## All Friends [/friends]
+The friend resource represents a friendship between two (2) users. A friendship is only created when a friend request has been accepted by a user.
+
+### Fetch all Friends [GET]
+Get all friends of a user. The user is identified through the Authorization header provided.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (text/plain)
+  + Body
+
+            [
+              {
+                "oauth_id": "12"
+              }
+            ]
+
+## A friend [/friends/{id}]
+
+### Delete Friendship [DELETE]
+An id param is expected which identifies the current user's friend. The current user is identified through the Authorization header provided.
+
++ Parameters
+  + id: "77" (required, string) - User ID of the user who is a friend of current user.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: Bearer {JWT_TOKEN}
++ Response 200 (text/plain)
+  + Body
+
+            Ok
+
+## All Friends for Services [/private/friends]
+Friends resource meant to be accessed by other MTA services.
+
+### Fetch all Friends [GET]
+Get all friends of a user. The user is identified through the `id` query parameter.
+`AUTH_CODE` is the Base64-encoded, sha256 hash of a secret key shared across services and the url of the endpoint.
+
++ Parameters
+  + id: "77" (required, string) - User ID of the user who you want to fetch friends for.
+
++ Request
+  + Headers
+
+            Accept: application/json
+            Authorization: X-C51 {JWT_TOKEN}
++ Response 200 (text/plain)
+  + Body
+
+            true/false
+
+
+## Friendship Check for Users [/friends-with/{id}]
+
+### Check if Two (2) Users are Connected [GET]
+The current user is identified through the Authorization header provided.
+
++ Parameters
+  + id: "77" (required, string) - User ID
+
++ Request
+  + Headers
+
+            Authorization: Bearer {AUTH_CODE}
++ Response 200 (text/plain)
+  + Body
+
+            true/false
+
+
+## Friendship Check for Services [/private/friends-with]
+
+### Check if Two (2) Users are Connected [GET]
+`AUTH_CODE` is the Base64-encoded, sha256 hash of a secret key shared across services and the url of the endpoint.
+
++ Parameters
+  + id: "77" (required, string) - User ID
+  + friend_id: "78" (required, string) - User ID
+
++ Request
+  + Headers
+
+            Authorization: X-C51 {AUTH_CODE}
++ Response 200 (text/plain)
+  + Body
+
+            true/false
+
 # Authentication & Authorization
 
 ## Introduction
@@ -115,7 +537,7 @@ All services share a secret key
 3. Service **B** receives the call, checks if the header is present and do the same process of point 2. Than Service **B** checks if both token are equal and only in this case it responds with the requested resource.
 
 If you want to try it in your shell, given `$URL` as the URL of the resource that needs authentication and given `$SECRET` the shared key:
-```
+```shell
 $ curl -vvv $URL -H 'Accept: application/json' -H "Authorization: X-C51 `echo -n $URL | openssl dgst -sha256 -hex -hmac $SECRET | cut -d ' ' -f 2`"
 ```
 
@@ -128,7 +550,7 @@ $ curl -vvv $URL -H 'Accept: application/json' -H "Authorization: X-C51 `echo -n
 1. Application **A** calls **orbita-oauth** requesting a standard *OAuth 2.0* login process.
 2. **orbita-oauth** responds back with a **access token** (in jwt format) containing this data:
 
-	```
+```javascript
     	  {
         	user: {
 	          id: 'xxxxxxxxxxx',
@@ -137,7 +559,7 @@ $ curl -vvv $URL -H 'Accept: application/json' -H "Authorization: X-C51 `echo -n
 	          date: 'xxxxxxxxxxx'
 	        }
 	      }
-	```
+```
 and a **refresh_token**.
 
 3. If Application **A** is an internal Orbita app it creates a cookie to share both tokens with **orbita-components**.
@@ -179,7 +601,7 @@ example: `orbitaComponents.showFlashMessage('lorem ipsum', 'info', 2500)`
 
 ### Example:
 
-```
+```javascript
 <div id="orbita_toolbar_wrapper">
 </div>
 
@@ -209,7 +631,7 @@ orbitaComponents.init({
 ```
 
 ### Different links in toolbar - you can provide function for customize links:
-```
+```javascript
 orbitaComponents.init({
   toolbar: {
     wrapperId: 'orbita_toolbar_wrapper', links: [
@@ -236,7 +658,7 @@ orbitaComponents.init({
 
 ### Example with Friend Button
 
-```
+```javascript
  <div>
    <p>Alex Err with id 2</p>
    <div id="button_connect"></div>
@@ -247,7 +669,7 @@ orbitaComponents.init({
 ```
 
 ### Adding custom links to user menu in the toolbar
-```
+```javascript
 orbitaComponents.init({
   toolbar: {
     userMenu: {
@@ -301,7 +723,7 @@ Emitted from the orbita-networking service when a user requests friendship from 
 * `to` (`UUID`): the `OAUTH` id of the target user
 
 Example:
-```json
+```javascript
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
   "type": "FriendshipRequested",
@@ -344,7 +766,7 @@ Emitted on channel `orbita-oauth`
 * `payload` -> user private profile fields
 
 Example:
-```json
+```javascript
 
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
@@ -373,7 +795,7 @@ Emitted on channel `orbita-oauth`
 * `payload` -> user private profile fields
 
 Example:
-```json
+```javascript
 
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
@@ -402,7 +824,7 @@ Emitted on channel `orbita-oauth`
 * `payload` -> `{from: 'en', to: 'it', user_id: 1}`
 
 Example:
-```json
+```javascript
 
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
@@ -428,7 +850,7 @@ Emitted on channel `orbita-oauth`
 * `payload` -> `{user_id: 1}`
 
 Example:
-```json
+```javascript
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
   "type": "UserDeleted",
@@ -448,7 +870,7 @@ Example:
 * `payload` -> `{user_id: 1}`
 
 Example:
-```json
+```javascript
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
   "type": "UserDeleted",
@@ -477,7 +899,7 @@ Emitted on channel `inventory`
   * `to` (`UUID`): the `OAUTH` id of the target user
 
 Example:
-```json
+```javascript
 {
   "id": "95494570-BA22-488E-AF9A-E272589ACEA2",
   "type": "ArtworkShared",
@@ -501,12 +923,14 @@ Example:
 ## Mta-Oauth create apps
 
 * `rake db:seed`
-* Open localhost:5100, login with user: `enricocarlesso@gmail.com` and password `password`
+* create via rails c an admin user (get a user from User.first and se is_admin to true)
+* Open localhost:5100, login with admin user
 * Go to admin section, and create first application, add callback urls. (mark `trusted` as true)
+
 Example:
 
-```json
-  Redirect uri: "http://portal.mytemplart-staging.com/users/auth/oauth51/callback",
+```javascript
+  Redirect uri: "http://portal.mysite-staging.com/users/auth/oauth51/callback",
   Uid: "dc58bccd82602fa1c86bdff342e3c627d44dd642dabf2e9b645ea0e501291d14",
   Secret: "a19c7a77185df47182dbe241a9e02614465da2dfe8f06d7fe888645465312001"
 ```
@@ -523,30 +947,45 @@ Then go to your application (jwt_test, developers) and add this secret and id to
 
 * `bundle install`
 * Create oauth application in oauth app.
- - Login  into `connect.mytemplart-staging.com as admin` and go to `Dashboard`
+ - Login  into `connect.mysite-staging.com as admin` and go to `Dashboard`
  - Navigate to `Application` and click `Add new`
- - Fill into: name `application name`, Redirect uri `http://my-site.mytemplart.com/users/auth/oauth51/callback`, Trusted `true`
+ - Fill into: name `application name`, Redirect uri `http://my-site.mysite.com/users/auth/oauth51/callback`, Trusted `true`
  - Click `Save` button
-* Go to your application and open `config/secrets.yml` (also put to `.gitignore` this file)
+ * Go to your application and open `config/secrets.yml` (also put to `.gitignore` this file)
  * Add your application secret code and uid to this file, example:
- *  ```ruby
+ *  
+ ```ruby
     oauth:
     client_id: 0e08f9a0d80790d1d945fabfb4a80987fb17a5ac0a423448f8dc318e141f0d0e
     client_secret: 657a4c196c50ec957804c87d3915ad5b1f0504def89682b5d50131f4e72df766
     app_url: http://localhost:5100
  ```
 
+## How to compose your secret.yml file
+
+- Rails.application.secrets.jwt_cookie - This is the name of the browser cookie where the JWT token will be stored. We use JWT for authentication. This must be the same for all services that will communicate with each other. For example, all orbita services in production must have the same cookie. The cookie used for orbita services in production must be different from the cookie used for orbita services in staging.
+
+- Rails.application.secrets.cdn_url - This is the url for the components/cdn service. For example, orbita staging’s cdn service is at http://cdn-staging.getorbita.io while orbita production’s cdn service is at http://cdn.getorbita.io.
+
+- Rails.application.secrets.amqp - We are expected to set 3 variables here which are vhost, username and password. Setting a virtual_host is a way for us to ensure that orbita services for staging do not mix up RabbitMQ messages with orbita services for production. We run one instance of RabbitMQ which is shared by multiple deployments. These details must be the same for services that will communicate with each other.
+
+- Rails.application.secrets.oauth['client_id’] - In the oauth service, we’ll need to add the application. Once added, we’ll have oauth credentials for both client_id and client_secret. If I remember correctly, API key is client_id.
+
+- Rails.application.secrets.oauth['client_secret’] - In the oauth service, we’ll need to add the application. Once added, we’ll have oauth credentials for both client_id and client_secret.
+
+- Rails.application.secrets.oauth['app_url’] - This is the url for the oauth service. For example, in staging for orbita, it would be http://connect-staging.getorbita.io. For development, it would be something like http://localhost:5100. For production, it would be http://connect.getorbita.io.
+
 ### Login section
 For login, you can use oauth provider, and implement it in your application. Let's do it:
  * Add to `devise.rb`:
 
-```
+```javascript
 config.omniauth :oauth51, Rails.application.secrets.oauth['client_id'],   Rails.application.secrets.oauth['client_secret'], scope: 'public accounts points', client_options: {site: Rails.application.secrets.oauth['app_url']}
 
 ```
  * Create `omniauth_callbacks_controller.rb` in `app/controllers` folder:
 
-```
+```ruby
   class OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
     COOKIES_KEY = :_jwt_token
@@ -644,7 +1083,7 @@ end
 
 ## Now Our application can login by token, and go to all applications as logined user.
 Next step - add some components to our application. Lets add `toolbar` with notifications:
- * Add to config/secrets.yml cdn url: `cdn_url: http://cdn.mytemplart-staging.com`
+ * Add to config/secrets.yml cdn url: `cdn_url: http://cdn.mysite-staging.com`
  * Add to your layout next code:
 
 ```html
@@ -669,11 +1108,11 @@ Next step - add some components to our application. Lets add `toolbar` with noti
     var store = orbitaComponents.configureStoreFunction(window.Reducers);
     //You can use store in your own redux application if you use react, or ignore it.
     orbitaComponents.renderToolbar({wrapperId: 'orbita_toolbar_wrapper', store: store, links: [{
-      url: 'https://www.mytemplart.com/inventory/users/sign_in',
+      url: 'https://www.mysite.com/inventory/users/sign_in',
       it: 'Inventario',
       en: 'Inventory'
     },{
-      url: 'http://www.mytemplart.com',
+      url: 'http://www.mysite.com',
       it: 'Magazine',
       en: 'Magazine'
     }]});
@@ -711,7 +1150,7 @@ When making the requests, keep in mind that an access token is required. You wil
 
 We will need to edit the [config.exs](https://git.coders51.com/coders51/orbita/blob/master/config.exs) file found in the root directory of the `orbita` repo. A `get_configs/1` function is expected for the instance you want to setup. The `get_configs/1` function should return a keyword list with certain options. If you want to generate configs for a `"foo"` instance, we define the following `get_configs/1` function:
 
-```
+```ruby
   def get_configs("foo") do
     [apps: @apps, # a list of apps you want to generate configs for. refer to @apps to see all available options
      ports: %{
@@ -729,7 +1168,7 @@ We will need to edit the [config.exs](https://git.coders51.com/coders51/orbita/b
 
 From the command line, go to the root of the `orbita` directory. From there, we run the following:
 
-```
+```shell
 $ ./gen_configs -n foo
 ```
 
@@ -738,7 +1177,7 @@ The above command generates capistrano, nginx, supervisor, unicorn, thin, secret
 ## First Deployment of Each Service/App
 
 Before deploying, go to the repo of either Networking, Notifications or Oauth and then run the ff:
-```
+```shell
 $ bundle exec cap foo_production setup:amqp
 ```
 
@@ -747,7 +1186,7 @@ The above command creates the rabbitmq vhost for the instance and a correspondin
 ### All services except Dashboard and Components/CDN are deployed this way:
 
 Make sure you are in the root directory of the service we want to deploy.
-```
+```shell
 $ git commit -am "foo_production deploy configs"
 $ bundle exec cap foo_production deploy:initial # if env is "staging" then it should be foo_staging
 ```
@@ -758,13 +1197,13 @@ Note that we `deploy:initial`. This is different from the capistrano `deploy` ta
 
 Before deploying, you will need to add the necessary configs for your deployment to `config/environment.js`. Commit and push that to the remote host before running the below commands.
 
-```
+```shell
 $ ./setup_deploy foo_dashboard_production deploy@server.com  # the first arg is the name of the dashboard app which is the namespace + dashboard + env
 $ ember deploy foo_dashboard_production
 ```
 
 ### For Components/CDN, we do:
-```
+```shell
 $ git commit -am "foo_production deploy configs"
 $ bundle exec cap foo_production copy:initial
 ```
@@ -782,12 +1221,12 @@ For every application just run `cap staging deploy`
 
 ## Staging Remote URLs
 
-* http://connect.mytemplart-staging.com -> It's the ouath server -> mta-oauth
-* http://portal.mytemplart-staging.com -> It's the portal -> mta-test-jwt
-* http://developers.mytemplart-staging.com -> It's the site for the developers -> mta-developers
-* http://networking.mytemplart-staging.com -> It's the networking service -> mta-networking
-* http://notification.mytemplart-staging.com -> It's the notification server -> mta-notification
-* http://cdn.mytemplart-staging.com -> We use for distribute the js compoments file -> mta-components
+* http://connect.mysite-staging.com -> It's the ouath server -> mta-oauth
+* http://portal.mysite-staging.com -> It's the portal -> mta-test-jwt
+* http://developers.mysite-staging.com -> It's the site for the developers -> mta-developers
+* http://networking.mysite-staging.com -> It's the networking service -> mta-networking
+* http://notification.mysite-staging.com -> It's the notification server -> mta-notification
+* http://cdn.mysite-staging.com -> We use for distribute the js compoments file -> mta-components
 
 # Vagrant Provisioning
 
@@ -809,7 +1248,7 @@ For every application just run `cap staging deploy`
 
 1. Install Ansible in your dev machine
 2. Set staging host in `/etc/ansible/hosts` by adding the following to that file:
-    ```
+    ```ruby
     [staging]
     deploy@orbita.lan.coders51.com
     ```
@@ -820,12 +1259,12 @@ For every application just run `cap staging deploy`
 # Deploying Orbita Services
 
 ## Deploying Services Except Dashboard
-```
+```shell
 $ bundle exec cap foo_production deploy
 ```
 
 ## Deploying Dashboard
-```
+```shell
 $ ember deploy foo_dashboard_production
 ```
 
