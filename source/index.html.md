@@ -1259,11 +1259,17 @@ For every application just run `cap staging deploy`
 # Deploying Orbita Services
 
 ## Deploying Services Except Dashboard
+
+$ bundle exec cap foo_production deploy
+
 ```shell
 $ bundle exec cap foo_production deploy
 ```
 
 ## Deploying Dashboard
+
+$ ember deploy foo_dashboard_production
+
 ```shell
 $ ember deploy foo_dashboard_production
 ```
