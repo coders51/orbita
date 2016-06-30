@@ -91,7 +91,7 @@
       <script src="javascripts/all.js"></script>
   </head>
 
-  <body class="index" data-languages="[&quot;shell&quot;,&quot;ruby&quot;,&quot;javascript&quot;]">
+  <body class="index" data-languages="[&quot;shell&quot;,&quot;ruby&quot;,&quot;javascript&quot;,&quot;html&quot;]">
     <a href="#" id="nav-button">
       <span>
         NAV
@@ -104,6 +104,7 @@
               <a href="#" data-language-name="shell">shell</a>
               <a href="#" data-language-name="ruby">ruby</a>
               <a href="#" data-language-name="javascript">javascript</a>
+              <a href="#" data-language-name="html">html</a>
         </div>
         <div class="search">
           <input type="text" class="search" id="input-search" placeholder="Search">
@@ -119,11 +120,52 @@
     <div class="page-wrapper">
       <div class="dark-box"></div>
       <div class="content">
-        <h1 id="introduction">Introduction</h1>
+        <h1 id="orbita">Orbita</h1>
 
-<h1 id="orbita">Orbita</h1>
+<h2 id="summary">Summary</h2>
 
-<p>This repository will be used to contain everything that needs to be shared between all the services/repositories, in particular</p>
+<ul>
+<li><a href="/#introduction">Introduction</a></li>
+<li><a href="/#general-architecture-details">General Architecture Details</a></li>
+<li><a href="/#http-api-documentation">HTTP API Documentation</a></li>
+<li><a href="/#authentication-amp-authorization">Authentication and Authorization</a></li>
+<li><a href="/#orbita-components-api">Orbita Components API</a></li>
+<li><a href="/#verify-jwt-token">Verify JWT</a></li>
+<li><a href="/#domain-events">Domain Events</a></li>
+<li><a href="/#how-to-create-new-application-and-use-all-orbita-services">How to create new application and use all orbita services</a></li>
+<li><a href="/#how-to-store-user-data-in-orbita-bucket-service">How to store user data in Orbita Bucket service</a></li>
+</ul>
+
+<h2 id="deployment-and-server-configuration">Deployment and Server Configuration</h2>
+
+<ul>
+<li><a href="/#how-to-setup-a-new-orbita-instance">How to Setup A New Orbita Instance</a></li>
+<li><a href="/#vagrant-provisioning">Provisioning Vagrant</a></li>
+<li><a href="/#provisioning-staging-server">Provisioning Staging Server</a></li>
+<li><a href="/#deploying-orbita-services">How to Deploy Services</a></li>
+<li><a href="/#dev-machine-setup">Dev Machine Setup</a></li>
+</ul>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>orbita is a product useful to:</p>
+
+<ul>
+<li>centralize all your user base on a unique database</li>
+<li>analyze their behaviour (misure their action and how they interact with you)</li>
+<li>have web components to integrate in all your apps</li>
+<li>have a set of API for your web and mobile apps to speed up development</li>
+<li>have landing page to mix your marketing analysis with real registration to your platform</li>
+<li>distribute your brand connection with plugin</li>
+<li>create a network of your users with a graph db</li>
+<li>have realtime notification between your different application</li>
+<li>store big data associated to your users</li>
+<li>have webhook with your mailchimp list</li>
+</ul>
+
+<p>Using orbita you can reduce your time to market and your time to break even</p>
+
+<p>orbita is a product by <a href="http://coders51.com">coders51</a></p>
 
 <ul>
 <li>This repository&rsquo;s wiki will hold the documentation about: API, domain concepts, shared data, etc&hellip;</li>
@@ -131,38 +173,17 @@
 <li>Integration and smoke tests</li>
 </ul>
 
-<p>This projects is based on microservices and exchange <a href="DomainEvents">domain events</a> on a <a href="EventBus">event bus</a>.</p>
+<p>This projects is based on microservices and exchange <a href="#domain-events">domain events</a> on a <a href="event-bus">event bus</a>.</p>
 
 <p>The actual services are:</p>
 
 <ul>
-<li>OAuth service - The repository is <a href="https://git.coders51.com/coders51/orbita-oauth/tree/master">here</a>. It&rsquo;s <strong><em>write a little description here</em></strong>.</li>
-<li>Networking service - The repository is <a href="https://git.coders51.com/coders51/orbita-networking/tree/master">here</a>. This service maps the relationships between users and other entities. It responds to events like <code class="prettyprint">&quot;FriendshipRequested&quot;</code> and similar events that may involve creating of, updating of and querying by relationships. In the case of a <code class="prettyprint">&quot;FriendshipRequested&quot;</code> event, a <code class="prettyprint">FriendRequest</code> between two users is saved in its data store. Later on, this <code class="prettyprint">friend_request</code> may be accepted when this service receives <code class="prettyprint">&quot;FriendshipAccepted&quot;</code> event that involves the same two users. By default, this runs in <code class="prettyprint">localhost:4001</code> in development.</li>
-<li>Notification service - The repository is <a href="https://git.coders51.com/coders51/orbita-notification/tree/master">here</a>. It&rsquo;s <strong><em>write a little description here</em></strong>.</li>
-</ul>
-
-<h2 id="summary">Summary</h2>
-
-<ul>
-<li><a href="/#general-architecture-details">General Architecture Details</a></li>
-<li><a href="/#http-api-documentation">HTTP API Documentation</a></li>
-<li><a href="/#authentication-and-authorization">Authentication and Authorization</a></li>
-<li><a href="/#orbita-components-api">Orbita Components API</a></li>
-<li><a href="/#jwt">Authentication JWT Format &amp; Authentication API</a></li>
-<li><a href="/#domain-events">Domain Events</a></li>
-<li><a href="/#how-to-run-local">How To Run Local</a></li>
-<li><a href="/#how-to-create-new-application">How to create new application</a></li>
-<li><a href="/#how-to-make-requests-to-oauth-for-storing-user-data-in-bucket">How to store user data in Orbita Bucket service</a></li>
-</ul>
-
-<h2 id="deployment-and-server-configuration">Deployment and Server Configuration</h2>
-
-<ul>
-<li><a href="/#how-to-setup-orbita-instance">How to Setup A New Orbita Instance</a></li>
-<li><a href="/#staging-environment-and-deploy">Staging Environment And Deploy</a></li>
-<li><a href="/#provisioning-vagrant">Provisioning Vagrant</a></li>
-<li><a href="/#provisioning-staging">Provisioning Staging Server</a></li>
-<li><a href="/#how-to-deploy-services">How to Deploy Services</a></li>
+<li>OAuth service - It&rsquo;s the core of orbita. All the application and service use api from oauth. You can have a link/button in all your app: CONNECT WITH MY BRAND easy as you make &ldquo;connect with facebook&rdquo;.</li>
+<li>Networking service - This service maps the relationships between users and other entities. It responds to events like <code class="prettyprint">&quot;FriendshipRequested&quot;</code> and similar events that may involve creating of, updating of and querying by relationships. In the case of a <code class="prettyprint">&quot;FriendshipRequested&quot;</code> event, a <code class="prettyprint">FriendRequest</code> between two users is saved in its data store. Later on, this <code class="prettyprint">friend_request</code> may be accepted when this service receives <code class="prettyprint">&quot;FriendshipAccepted&quot;</code> event that involves the same two users. By default, this runs in <code class="prettyprint">localhost:4001</code> in development.</li>
+<li>Notification service - A realtime service for every kind of notification you need (web/desktop/mobile)</li>
+<li>Wordpress plugin - give to your marketing manager the power to make landing page with visual composer and add a link/button to connect to your <strong>real</strong> user base</li>
+<li>Bucket data service - store complex data different by application and user and use it to profile action and specific data</li>
+<li>Dashboard analytic - profilation and marketing tool with mailchimp webhook</li>
 </ul>
 
 <h1 id="general-architecture-details">General Architecture Details</h1>
@@ -198,7 +219,7 @@
 <span class="gp">$ </span>aglio -i http-api-mta-notifications.md -o http-api-mta-notifications.html
 </code></pre>
 
-<h1 id="orbita-authentication-amp-authorization">Orbita Authentication &amp; Authorization</h1>
+<h1 id="authentication-amp-authorization">Authentication &amp; Authorization</h1>
 
 <h2 id="introduction">Introduction</h2>
 
@@ -410,9 +431,9 @@ orbitaComponents.init({
 * <code class="prettyprint">correlation_id</code> (<code class="prettyprint">string</code>): an id that can be used to create relationship between events (ex. If I group friendship events using the <code class="prettyprint">correlation_id</code> I will expect to see groups of events like [<code class="prettyprint">FriendshipRequested</code>, <code class="prettyprint">FriendshipAccepted</code>] or [<code class="prettyprint">FriendshipRequested</code>, <code class="prettyprint">FriendshipRefused</code>])
 * <code class="prettyprint">payload</code> (<code class="prettyprint">object</code>): event specific data</p>
 
-<h2 id="domain-events">Domain Events</h2>
+<h1 id="domain-events">Domain Events</h1>
 
-<h3 id="friendshiprequested">FriendshipRequested</h3>
+<h2 id="friendshiprequested">FriendshipRequested</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-networking</code></p>
 
@@ -435,7 +456,7 @@ orbitaComponents.init({
 }
 </code></p>
 
-<h3 id="friendshipaccepted">FriendshipAccepted</h3>
+<h2 id="friendshipaccepted">FriendshipAccepted</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-networking</code></p>
 
@@ -444,7 +465,7 @@ orbitaComponents.init({
 * <code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user
 * <code class="prettyprint">request_id</code> : the id of the friend request</p>
 
-<h3 id="friendshiprefused">FriendshipRefused</h3>
+<h2 id="friendshiprefused">FriendshipRefused</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-networking</code></p>
 
@@ -453,7 +474,7 @@ orbitaComponents.init({
 * <code class="prettyprint">to</code> (<code class="prettyprint">UUID</code>): the <code class="prettyprint">OAUTH</code> id of the target user
 * <code class="prettyprint">request_id</code> : the id of the friend request</p>
 
-<h3 id="usercreated">UserCreated</h3>
+<h2 id="usercreated">UserCreated</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
 
@@ -484,7 +505,7 @@ orbitaComponents.init({
 }
 &ldquo;`</p>
 
-<h3 id="userupdated">UserUpdated</h3>
+<h2 id="userupdated">UserUpdated</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
 
@@ -515,7 +536,7 @@ orbitaComponents.init({
 }
 &ldquo;`</p>
 
-<h3 id="user-language-changed">User language changed</h3>
+<h2 id="user-language-changed">User language changed</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
 
@@ -543,7 +564,7 @@ orbitaComponents.init({
 }
 &ldquo;`</p>
 
-<h3 id="userdeleted">UserDeleted</h3>
+<h2 id="userdeleted">UserDeleted</h2>
 
 <p>Emitted on channel <code class="prettyprint">orbita-oauth</code></p>
 
@@ -568,7 +589,7 @@ orbitaComponents.init({
 }
 </code></p>
 
-<h3 id="userlogout">UserLogout</h3>
+<h2 id="userlogout">UserLogout</h2>
 
 <ul>
 <li><code class="prettyprint">id</code> (<code class="prettyprint">UUID</code>): an <code class="prettyprint">UUID</code> generated by the service that emitted the event</li>
@@ -591,7 +612,7 @@ orbitaComponents.init({
 }
 </code></p>
 
-<h3 id="artworkshared">ArtworkShared</h3>
+<h2 id="artworkshared">ArtworkShared</h2>
 
 <p>Emitted on channel <code class="prettyprint">inventory</code></p>
 
@@ -1001,6 +1022,7 @@ deploy@orbita.lan.coders51.com
                 <a href="#" data-language-name="shell">shell</a>
                 <a href="#" data-language-name="ruby">ruby</a>
                 <a href="#" data-language-name="javascript">javascript</a>
+                <a href="#" data-language-name="html">html</a>
           </div>
       </div>
     </div>
