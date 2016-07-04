@@ -19,23 +19,23 @@ search: true
 # Orbita
 
 ## Summary
-- [Introduction](/#introduction)
-- [General Architecture Details](/#general-architecture-details)
-- [Quick reference for a setup of a production server](/#quick-reference-for-setup-of-a-production-server)
-- [HTTP API Documentation](/#http-api-documentation)
-- [Authentication and Authorization](/#authentication-amp-authorization)
-- [Orbita Components API](/#orbita-components-api)
-- [Verify JWT](/#verify-jwt-token)
-- [Domain Events](/#domain-events)
-- [How to create new application and use all orbita services](/#how-to-create-new-application-and-use-all-orbita-services)
-- [How to store user data in Orbita Bucket service](/#how-to-store-user-data-in-orbita-bucket-service)
+- [Introduction](/orbita-doc/#introduction)
+- [General Architecture Details](/orbita-doc/#general-architecture-details)
+- [Quick reference for a setup of a production server](/orbita-doc/#quick-reference-for-setup-of-a-production-server)
+- [HTTP API Documentation](/orbita-doc/#http-api-documentation)
+- [Authentication and Authorization](/orbita-doc/#authentication-amp-authorization)
+- [Orbita Components API](/orbita-doc/#orbita-components-api)
+- [Verify JWT](/orbita-doc/#verify-jwt-token)
+- [Domain Events](/orbita-doc/#domain-events)
+- [How to create new application and use all orbita services](/orbita-doc/#how-to-create-new-application-and-use-all-orbita-services)
+- [How to store user data in Orbita Bucket service](/orbita-doc/#how-to-store-user-data-in-orbita-bucket-service)
 
 ## Deployment and Server Configuration
-- [How to Setup A New Orbita Instance](/#how-to-setup-a-new-orbita-instance)
-- [Provisioning Vagrant](/#vagrant-provisioning)
-- [Provisioning Staging Server](/#provisioning-staging-server)
-- [How to Deploy Services](/#deploying-orbita-services)
-- [Dev Machine Setup](/#dev-machine-setup)
+- [How to Setup A New Orbita Instance](/orbita-doc/#how-to-setup-a-new-orbita-instance)
+- [Provisioning Vagrant](/orbita-doc/#vagrant-provisioning)
+- [Provisioning Staging Server](/orbita-doc/#provisioning-staging-server)
+- [How to Deploy Services](/orbita-doc/#deploying-orbita-services)
+- [Dev Machine Setup](/orbita-doc/#dev-machine-setup)
 
 
 # Introduction
