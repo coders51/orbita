@@ -965,7 +965,7 @@ $ curl -vvv $URL -H &#39;Accept: application/json&#39; -H &quot;Authorization: X
         <span class="na">url</span><span class="p">:</span> <span class="s1">'/settings'</span><span class="p">,</span>
         <span class="na">it</span><span class="p">:</span> <span class="s1">'Settings'</span><span class="p">,</span>
         <span class="na">en</span><span class="p">:</span> <span class="s1">'Settings'</span><span class="p">,</span>
-        <span class="na">authorization</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">currentUser</span><span class="p">){</span> <span class="k">return</span> <span class="nx">currentUser</span> <span class="p">}</span>  
+        <span class="na">authorization</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">currentUser</span><span class="p">){</span> <span class="k">return</span> <span class="nx">currentUser</span> <span class="p">}</span>
       <span class="p">}],</span>
       <span class="na">logoImage</span><span class="p">:</span> <span class="s2">"&lt;%=asset_url('white_logo.png') %&gt;"</span><span class="p">,</span>
       <span class="na">logoWidth</span><span class="p">:</span> <span class="s2">"165px"</span><span class="p">,</span>
@@ -1305,8 +1305,8 @@ $ curl -vvv $URL -H &#39;Accept: application/json&#39; -H &quot;Authorization: X
 <li>Fill into: name <code class="prettyprint">application name</code>, Redirect uri <code class="prettyprint">http://my-site.mysite.com/users/auth/oauth51/callback</code>, Trusted <code class="prettyprint">true</code></li>
 <li>Click <code class="prettyprint">Save</code> button</li>
 <li>Go to your application and open <code class="prettyprint">config/secrets.yml</code> (also put to <code class="prettyprint">.gitignore</code> this file)</li>
-<li>Add your application secret code and uid to this file, example:</li>
-<li> 
+<li>Add your application secret code and uid to this file, example:
+*
 <code class="prettyprint">ruby
 oauth:
 client_id: 0e08f9a0d80790d1d945fabfb4a80987fb17a5ac0a423448f8dc318e141f0d0e
@@ -1441,7 +1441,7 @@ app_url: http://localhost:5100
 <p>Next step - add some components to our application. Lets add <code class="prettyprint">toolbar</code> with notifications:
  * Add to config/secrets.yml cdn url: <code class="prettyprint">cdn_url: http://cdn.mysite-staging.com</code>
  * Add to your layout next code:</p>
-<pre class="highlight html"><code><span class="nt">&lt;head&gt;</span>  
+<pre class="highlight html"><code><span class="nt">&lt;head&gt;</span>
   <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"&lt;%= Rails.application.secrets.cdn_url %&gt;/orbita_components.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
   <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.en"</span><span class="nt">&gt;&lt;/script&gt;</span>
   <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.it"</span><span class="nt">&gt;&lt;/script&gt;</span>
@@ -1640,6 +1640,66 @@ deploy@orbita.lan.coders51.com
 <li>Make sure that the forwarded ports found in the Vagrantfile are open in your host computer. <code class="prettyprint">vagrant up</code> will fail if those ports aren&rsquo;t available.</li>
 <li>If you want to start services separately, refer to the Vagrantfile to see how to start them.</li>
 </ul>
+
+          <h1 id="how-to-receive-orbita-notification">How to receive orbita notification</h1>
+
+<p>All the orbita notifications are sent through the exchange <strong>orbita_exchange</strong> of type <a href="https://www.rabbitmq.com/tutorials/tutorial-five-python.html">topic</a>. There are two main routing key in orbita one for receive notification and one for send command. To receive notification you should create a new queue with routing key of type <code class="prettyprint">#.evt.#</code> see this exampel in ruby using <a href="http://rubybunny.info/">bunny</a> (There are a lot of client in other <a href="https://www.rabbitmq.com/clients.html">languages</a>):</p>
+<pre class="highlight ruby"><code><span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">amqp_opts</span><span class="p">)</span>
+<span class="n">connection</span><span class="p">.</span><span class="nf">start</span>
+<span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="p">.</span><span class="nf">create_channel</span>
+<span class="n">orbita_exchange</span> <span class="o">=</span> <span class="n">channel</span><span class="p">.</span><span class="nf">topic</span><span class="p">(</span><span class="s1">'orbita_exchange'</span><span class="p">)</span>
+<span class="n">queue</span> <span class="o">=</span> <span class="n">channel</span><span class="p">.</span><span class="nf">queue</span><span class="p">(</span><span class="s1">'my_app_queue'</span><span class="p">,</span> <span class="ss">durable: </span><span class="kp">true</span><span class="p">,</span> <span class="ss">auto_delete: </span><span class="kp">false</span><span class="p">)</span>
+<span class="n">queue</span><span class="p">.</span><span class="nf">bind</span><span class="p">(</span><span class="n">exchange</span><span class="p">,</span> <span class="ss">routing_key: </span><span class="s1">'#.evt.#'</span><span class="p">)</span>
+</code></pre>
+
+<p>The first part of routing key is reserved for future use but the second part, after <code class="prettyprint">evt</code>, should be specialized to receive only event from oauth, or from my_app. For example if you want receive all event from connect you should bind your queue in this way:</p>
+<pre class="highlight ruby"><code><span class="n">connection</span> <span class="o">=</span> <span class="no">Bunny</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">amqp_opts</span><span class="p">)</span>
+<span class="n">connection</span><span class="p">.</span><span class="nf">start</span>
+<span class="n">channel</span> <span class="o">=</span> <span class="n">connection</span><span class="p">.</span><span class="nf">create_channel</span>
+<span class="n">orbita_exchange</span> <span class="o">=</span> <span class="n">channel</span><span class="p">.</span><span class="nf">topic</span><span class="p">(</span><span class="s1">'orbita_exchange'</span><span class="p">)</span>
+<span class="n">queue</span> <span class="o">=</span> <span class="n">channel</span><span class="p">.</span><span class="nf">queue</span><span class="p">(</span><span class="s1">'my_app_queue'</span><span class="p">,</span> <span class="ss">durable: </span><span class="kp">true</span><span class="p">,</span> <span class="ss">auto_delete: </span><span class="kp">false</span><span class="p">)</span>
+<span class="n">queue</span><span class="p">.</span><span class="nf">bind</span><span class="p">(</span><span class="n">exchange</span><span class="p">,</span> <span class="ss">routing_key: </span><span class="s1">'#.evt.oauth.#'</span><span class="p">)</span>
+</code></pre>
+
+<h1 id="how-to-send-orbita-command">How to send orbita command</h1>
+
+<p>Sending a command is very similar to receive an event. The application should publish a message on &lsquo;orbita_exchange&rsquo; with the appropiate routing key. The routing key is composed by a first part that should be fixed <code class="prettyprint">0.0.cmd.</code> and a second part that identify the <em>type</em> of the message. For example you could send a generic notification tha cna be dispatched via WS and mobile sending a message of this type:</p>
+<pre class="highlight json"><code><span class="err">message</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2cb56d59-ed41-4aad-9a7d-765fa89daa4b"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GenericNotification"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my_app"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"emitted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2016-09-22T16:24:13Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"payload"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nt">"from"</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"to"</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"link"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is a generic notification"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+
+<p>with routing key eqaul to <code class="prettyprint">0.0.cmd.notification</code>. Publishing this message on <code class="prettyprint">orbita_exchange</code> will bring up a notification on the bar of the user with id 23.</p>
+
+<h1 id="format-of-the-message">Format of the message</h1>
+
+<p>The format of the events and the commands is very similar:</p>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a75fbf6e-4c36-48fb-9051-33a2f9600e9a"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"emited_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2016-09-22T16:08:15Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GenericNotification"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my_app"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"payload"</span><span class="p">:</span><span class="w"> </span><span class="err">...</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+
+<ul>
+<li><code class="prettyprint">id</code> is a classic uuid that can used to differentiate all the messages</li>
+<li><code class="prettyprint">emitted_at</code> is the time of the server in UTC iso8601 format. This field should be used to reorder messages sent form the same source. <em>This time can NOT be used to apply a gloabal order between messages</em></li>
+<li><code class="prettyprint">type</code> is the type of teh message that can categorize the message.</li>
+<li><code class="prettyprint">payload</code> is something that the application should use to describe the event and/or the command</li>
+</ul>
+
+<p><strong>Warning</strong>: sometime some messages can contain other fields but it&rsquo;s cant be used directly by other aplication because can be removed or changed. In general only this fields should be considered always present and every fileds related to particular message should be put in the payload.</p>
 
       </div>
       <div class="dark-box">
