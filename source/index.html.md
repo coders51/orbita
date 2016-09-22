@@ -12,6 +12,9 @@ toc_footers:
   - documentation version v.0.1
   - <a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a>
 
+includes:
+  - how-tos
+
 search: true
 ---
 
@@ -647,7 +650,7 @@ orbitaComponents.init({
         url: '/settings',
         it: 'Settings',
         en: 'Settings',
-        authorization: function(currentUser){ return currentUser }  
+        authorization: function(currentUser){ return currentUser }
       }],
       logoImage: "<%=asset_url('white_logo.png') %>",
       logoWidth: "165px",
@@ -953,7 +956,7 @@ Then go to your application (jwt_test, developers) and add this secret and id to
  - Click `Save` button
  * Go to your application and open `config/secrets.yml` (also put to `.gitignore` this file)
  * Add your application secret code and uid to this file, example:
- *  
+ *
  ```ruby
     oauth:
     client_id: 0e08f9a0d80790d1d945fabfb4a80987fb17a5ac0a423448f8dc318e141f0d0e
@@ -1087,7 +1090,7 @@ Next step - add some components to our application. Lets add `toolbar` with noti
  * Add to your layout next code:
 
 ```html
-<head>  
+<head>
   <script src="<%= Rails.application.secrets.cdn_url %>/orbita_components.js"></script>
   <script src="https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.en"></script>
   <script src="https://cdn.polyfill.io/v2/polyfill.js?features=Intl.~locale.it"></script>
