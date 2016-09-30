@@ -61,6 +61,56 @@ The format of the events and the commands is very similar:
 
 **Warning**: sometime some messages can contain other fields but it's cant be used directly by other aplication because can be removed or changed. In general only this fields should be considered always present and every fileds related to particular message should be put in the payload.
 
+# Import users in OAuth
+It's possible import users from other applications in Orbita OAuth. There are a rake task that can be used to import data in OAuth from csv file. The task is `bundle exec rake orbita:oauth:import_users`. The format of the csv file is similar to table of the user:
+
+- email
+- encrypted_password
+- remember_created_at
+- sign_in_count
+- current_sign_in_at
+- last_sign_in_at
+- current_sign_in_ip
+- last_sign_in_ip
+- failed_attempts
+- unlock_token
+- locked_at
+- username
+- first_name
+- last_name
+- birthday
+- address
+- zip
+- gender
+- newsletter_subscribed
+- is_admin
+- is_dev
+- parent_email
+- parent_first_name
+- parent_last_name
+- parent_birthday
+- created_at
+- updated_at
+- avatar_file_name
+- avatar_content_type
+- avatar_file_size
+- avatar_updated_at
+- is_moderator
+- confirmation_token
+- confirmed_at
+- confirmation_sent_at
+- unconfirmed_email
+- language
+- invitation_token
+- invitation_created_at
+- invitation_sent_at
+- invitation_accepted_at
+- invitation_limit
+- invite_redirect_url
+- tos
+- privacy
+- measure_system
+
 
 [1]: https://www.rabbitmq.com/tutorials/tutorial-five-python.html
 [2]: http://rubybunny.info/
