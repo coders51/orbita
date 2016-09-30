@@ -1701,6 +1701,59 @@ deploy@orbita.lan.coders51.com
 
 <p><strong>Warning</strong>: sometime some messages can contain other fields but it&rsquo;s cant be used directly by other aplication because can be removed or changed. In general only this fields should be considered always present and every fileds related to particular message should be put in the payload.</p>
 
+<h1 id="import-users-in-oauth">Import users in OAuth</h1>
+
+<p>It&rsquo;s possible import users from other applications in Orbita OAuth. There are a rake task that can be used to import data in OAuth from csv file. The task is <code class="prettyprint">bundle exec rake orbita:oauth:import_users</code>. The format of the csv file is similar to table of the user:</p>
+
+<ul>
+<li>email</li>
+<li>encrypted_password</li>
+<li>remember_created_at</li>
+<li>sign_in_count</li>
+<li>current_sign_in_at</li>
+<li>last_sign_in_at</li>
+<li>current_sign_in_ip</li>
+<li>last_sign_in_ip</li>
+<li>failed_attempts</li>
+<li>unlock_token</li>
+<li>locked_at</li>
+<li>username</li>
+<li>first_name</li>
+<li>last_name</li>
+<li>birthday</li>
+<li>address</li>
+<li>zip</li>
+<li>gender</li>
+<li>newsletter_subscribed</li>
+<li>is_admin</li>
+<li>is_dev</li>
+<li>parent_email</li>
+<li>parent_first_name</li>
+<li>parent_last_name</li>
+<li>parent_birthday</li>
+<li>created_at</li>
+<li>updated_at</li>
+<li>avatar_file_name</li>
+<li>avatar_content_type</li>
+<li>avatar_file_size</li>
+<li>avatar_updated_at</li>
+<li>is_moderator</li>
+<li>confirmation_token</li>
+<li>confirmed_at</li>
+<li>confirmation_sent_at</li>
+<li>unconfirmed_email</li>
+<li>language</li>
+<li>invitation_token</li>
+<li>invitation_created_at</li>
+<li>invitation_sent_at</li>
+<li>invitation_accepted_at</li>
+<li>invitation_limit</li>
+<li>invite_redirect_url</li>
+<li>tos</li>
+<li>privacy</li>
+<li>measure_system</li>
+</ul>
+
       </div>
       <div class="dark-box">
           <div class="lang-selector">
