@@ -79,8 +79,6 @@ It's possible import users from other applications in Orbita OAuth. There are a 
 - first_name
 - last_name
 - birthday
-- address
-- zip
 - gender
 - newsletter_subscribed
 - is_admin
@@ -110,6 +108,12 @@ It's possible import users from other applications in Orbita OAuth. There are a 
 - tos
 - privacy
 - measure_system
+- country
+- province
+- city
+- address
+- zip
+
 
 
 [1]: https://www.rabbitmq.com/tutorials/tutorial-five-python.html
